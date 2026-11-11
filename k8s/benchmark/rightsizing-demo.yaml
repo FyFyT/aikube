@@ -1,0 +1,80 @@
+# Banc de démonstration des recommandations de dimensionnement.
+# Trois cas, chacun doit produire une recommandation différente :
+#   rs-oversized  : réserve 500m / 1Gi, consomme presque rien      → sur-dimensionné
+#   rs-nolimits   : aucune request ni limit                        → limites absentes
+#   rs-leaky      : mémoire qui croît de ~3 Mio toutes les 20 s    → OOM imminent
+#                   (limite 192Mi atteinte en ≈ 20 min)
+# Déployer :  kubectl apply -f k8s/benchmark/rightsizing-demo.yaml
+# Supprimer : kubectl delete namespace rightsizing-demo
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rightsizing-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rs-oversized
+  namespace: rightsizing-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: rs-oversized}
+  template:
+    metadata:
+      labels: {app: rs-oversized}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command: ["python", "-c", "import time\nwhile True: time.sleep(5)"]
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {memory: 1Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rs-nolimits
+  namespace: rightsizing-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: rs-nolimits}
+  template:
+    metadata:
+      labels: {app: rs-nolimits}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command: ["python", "-c", "b = bytearray(40*1024*1024)\nimport time\nwhile True: time.sleep(5)"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rs-leaky
+  namespace: rightsizing-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: rs-leaky}
+  template:
+    metadata:
+      labels: {app: rs-leaky}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command:
+            - python
+            - -c
+            - |
+              import time
+              chunks = []
+              while True:
+                  chunks.append(bytearray(3 * 1024 * 1024))
+                  time.sleep(20)
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 192Mi}

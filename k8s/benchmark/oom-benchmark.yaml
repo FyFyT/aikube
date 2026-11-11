@@ -1,0 +1,261 @@
+---
+# ==============================================================================
+# AI-Kube — Banc de prédiction d'épuisement mémoire
+# ==============================================================================
+#
+# POURQUOI CE BANC
+# ----------------
+# Les détecteurs évalués jusqu'ici constatent un état présent. La prédiction
+# exige une variable qui ÉVOLUE : on ne peut extrapoler ce qui n'a pas de
+# dérivée. La consommation mémoire d'un pod est une telle variable, et sa
+# limite est connue par construction — l'instant de l'OOMKill est donc
+# extrapolable :
+#
+#     t_OOM = (limite − mémoire courante) / pente de consommation
+#
+# La prédiction est falsifiable : on compare l'instant prédit à l'instant
+# réellement observé, et l'écart constitue l'erreur de prédiction.
+#
+# ÉTIQUETTES DE VÉRITÉ TERRAIN
+# ----------------------------
+#     aikube.oom/expected     : oom | stable
+#     aikube.oom/pattern      : forme de la trajectoire
+#     aikube.oom/leak-rate    : Mio alloués par palier
+#     aikube.oom/leak-interval: secondes entre paliers
+#
+# Le débit de fuite étant paramétré, l'instant théorique de l'OOM se calcule
+# a priori. Il sert de seconde référence, indépendante de la mesure.
+#
+# TROIS RÉGIMES
+# -------------
+#   Fuites     : trajectoires croissantes de vitesses différentes, pour vérifier
+#                que l'erreur de prédiction ne dépend pas du débit.
+#   Stables    : consommation constante, dont une proche de la limite — un
+#                prédicteur fondé sur un seuil d'occupation les signalerait à
+#                tort.
+#   Non linéaire : paliers et dents de scie, pour éprouver l'hypothèse de
+#                linéarité sur laquelle repose l'extrapolation.
+#
+# IMAGE UTILISÉE
+# --------------
+# python:3.12-alpine plutôt que busybox : l'allocation doit produire de la
+# mémoire résidente réellement comptabilisée par le cgroup. Écrire dans
+# /dev/shm ne conviendrait pas, ce système de fichiers ayant sa propre limite
+# indépendante de celle du conteneur.
+#
+# USAGE
+#   kubectl apply -f k8s/benchmark/oom-benchmark.yaml
+#   python3 scripts/oom_prediction.py --duration 900 --interval 10
+#   kubectl delete namespace aikube-oom
+# ==============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-oom
+  labels:
+    aikube.oom/purpose: prediction-evaluation
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# FUITE RAPIDE — 8 Mio toutes les 10 s, limite 128 Mio
+# OOM théorique : (128 − ~15 de base) / 8 × 10 ≈ 140 s
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-leak-fast
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: oom
+    aikube.oom/pattern: linear-fast
+    aikube.oom/leak-rate: "8"
+    aikube.oom/leak-interval: "10"
+spec:
+  restartPolicy: Always
+  containers:
+    - name: leaker
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          held = []
+          step = 0
+          while True:
+              held.append(bytearray(8 * 1024 * 1024))
+              step += 1
+              print(f"palier {step} — {step * 8} Mio alloués", flush=True)
+              time.sleep(10)
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "128Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# FUITE LENTE — 4 Mio toutes les 20 s, limite 192 Mio
+# OOM théorique ≈ 880 s. Éprouve la prédiction sur un horizon long.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-leak-slow
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: oom
+    aikube.oom/pattern: linear-slow
+    aikube.oom/leak-rate: "4"
+    aikube.oom/leak-interval: "20"
+spec:
+  restartPolicy: Always
+  containers:
+    - name: leaker
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          held = []
+          step = 0
+          while True:
+              held.append(bytearray(4 * 1024 * 1024))
+              step += 1
+              print(f"palier {step} — {step * 4} Mio alloués", flush=True)
+              time.sleep(20)
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "192Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# FUITE PAR PALIERS — 30 Mio d'un coup toutes les 90 s, limite 160 Mio
+# La trajectoire n'est pas linéaire : entre deux paliers la pente est nulle,
+# et une extrapolation naïve conclurait à l'absence de risque.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-leak-stepped
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: oom
+    aikube.oom/pattern: stepped
+    aikube.oom/leak-rate: "30"
+    aikube.oom/leak-interval: "90"
+spec:
+  restartPolicy: Always
+  containers:
+    - name: leaker
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          held = []
+          step = 0
+          while True:
+              time.sleep(90)
+              held.append(bytearray(30 * 1024 * 1024))
+              step += 1
+              print(f"palier {step} — {step * 30} Mio alloués", flush=True)
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "160Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# PIÈGE — dents de scie
+# Alloue puis libère : la consommation croît sur de courtes fenêtres sans
+# jamais tendre vers la limite. Un prédicteur extrapolant une pente locale
+# annoncerait un OOM qui ne surviendra pas.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-sawtooth
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: stable
+    aikube.oom/pattern: sawtooth-trap
+spec:
+  restartPolicy: Always
+  containers:
+    - name: cyclic
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          while True:
+              held = []
+              for i in range(8):
+                  held.append(bytearray(8 * 1024 * 1024))
+                  print(f"montée {(i + 1) * 8} Mio", flush=True)
+                  time.sleep(12)
+              held.clear()
+              print("libération", flush=True)
+              time.sleep(20)
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "192Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# PIÈGE — consommation élevée mais stable
+# Occupe environ 75 % de sa limite sans jamais croître. Un prédicteur fondé
+# sur un seuil d'occupation (« alerter au-delà de 70 % ») le signalerait à tort,
+# indéfiniment.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-stable-high
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: stable
+    aikube.oom/pattern: high-plateau-trap
+spec:
+  restartPolicy: Always
+  containers:
+    - name: steady
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          held = [bytearray(96 * 1024 * 1024)]
+          print("plateau à 96 Mio", flush=True)
+          while True:
+              time.sleep(30)
+      resources:
+        requests: { memory: "64Mi", cpu: "20m" }
+        limits:   { memory: "128Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# RÉFÉRENCE — consommation faible et stable
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: oom-stable-low
+  namespace: aikube-oom
+  labels:
+    aikube.oom/expected: stable
+    aikube.oom/pattern: nominal
+spec:
+  restartPolicy: Always
+  containers:
+    - name: light
+      image: python:3.12-alpine
+      command: ["python3", "-u", "-c"]
+      args:
+        - |
+          import time
+          held = [bytearray(8 * 1024 * 1024)]
+          while True:
+              print("nominal", flush=True)
+              time.sleep(30)
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "128Mi", cpu: "200m" }

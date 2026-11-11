@@ -1,0 +1,160 @@
+{
+  "timestamp": "2026-09-01T14:20:54.043906+00:00",
+  "campaign": "2026-09-01T13:59:55.914661+00:00",
+  "sample_size": 21,
+  "iterations": 5000,
+  "results": {
+    "rules_v1": {
+      "f1": {
+        "point": 0.8571428571428572,
+        "mean": 0.8519,
+        "stdev": 0.0867,
+        "ci_low": 0.6667,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "precision": {
+        "point": 0.9,
+        "mean": 0.9021,
+        "stdev": 0.0955,
+        "ci_low": 0.6667,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "recall": {
+        "point": 0.8181818181818182,
+        "mean": 0.8182,
+        "stdev": 0.1194,
+        "ci_low": 0.5556,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "specificity": {
+        "point": 0.9,
+        "mean": 0.9013,
+        "stdev": 0.0972,
+        "ci_low": 0.6667,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      }
+    },
+    "rules_v2": {
+      "f1": {
+        "point": 0.8333333333333333,
+        "mean": 0.8284,
+        "stdev": 0.0861,
+        "ci_low": 0.6316,
+        "ci_high": 0.963,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "precision": {
+        "point": 0.7692307692307693,
+        "mean": 0.77,
+        "stdev": 0.1176,
+        "ci_low": 0.5333,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "recall": {
+        "point": 0.9090909090909091,
+        "mean": 0.9104,
+        "stdev": 0.0888,
+        "ci_low": 0.7,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "specificity": {
+        "point": 0.7,
+        "mean": 0.6997,
+        "stdev": 0.1499,
+        "ci_low": 0.3846,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      }
+    },
+    "rules_v3": {
+      "f1": {
+        "point": 1.0,
+        "mean": 1.0,
+        "stdev": 0.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "precision": {
+        "point": 1.0,
+        "mean": 1.0,
+        "stdev": 0.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "recall": {
+        "point": 1.0,
+        "mean": 1.0,
+        "stdev": 0.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "specificity": {
+        "point": 1.0,
+        "mean": 1.0,
+        "stdev": 0.0,
+        "ci_low": 1.0,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      }
+    },
+    "ml": {
+      "f1": {
+        "point": 0.8333333333333333,
+        "mean": 0.8284,
+        "stdev": 0.0861,
+        "ci_low": 0.6316,
+        "ci_high": 0.963,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "precision": {
+        "point": 0.7692307692307693,
+        "mean": 0.77,
+        "stdev": 0.1176,
+        "ci_low": 0.5333,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "recall": {
+        "point": 0.9090909090909091,
+        "mean": 0.9104,
+        "stdev": 0.0888,
+        "ci_low": 0.7,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      },
+      "specificity": {
+        "point": 0.7,
+        "mean": 0.6997,
+        "stdev": 0.1499,
+        "ci_low": 0.3846,
+        "ci_high": 1.0,
+        "undefined_draws": 0,
+        "iterations": 5000
+      }
+    }
+  }
+}

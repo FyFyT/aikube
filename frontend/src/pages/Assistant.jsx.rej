@@ -1,0 +1,11 @@
+--- frontend/src/pages/Assistant.jsx	2026-10-29 15:39:07.000000000 +0300
++++ frontend/src/pages/Assistant.jsx	2026-11-01 23:14:36.000000000 +0300
+@@ -26,7 +26,7 @@
+ 
+ const MODES = [
+   { id: 'agent', label: 'Agent (Claude + outils)', sub: 'Enquête sur le cluster avant de répondre' },
+-  { id: 'groq',  label: 'Groq Llama 3.3',          sub: 'Contexte résumé seulement, sans outils' },
++  { id: 'groq',  label: 'Mode comparaison',        sub: 'Témoin du mémoire : contexte résumé seulement, sans accès au cluster' },
+ ]
+ 
+ const STORE_KEY = 'aikube-agent-history'

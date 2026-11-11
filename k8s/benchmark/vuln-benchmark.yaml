@@ -1,0 +1,534 @@
+---
+# ==============================================================================
+# AI-Kube — Banc d'évaluation du scanner de configuration (C4)
+# ==============================================================================
+#
+# PRINCIPE
+# --------
+# Même méthode que le banc de détection d'anomalies : chaque ressource porte un
+# défaut de configuration connu, ou est délibérément durcie. La vérité terrain
+# est inscrite dans les étiquettes de la ressource elle-même :
+#
+#     aikube.vuln/expected   : vulnerable | hardened
+#     aikube.vuln/type       : nature du défaut injecté
+#     aikube.vuln/technique  : technique MITRE ATT&CK correspondante
+#     aikube.vuln/detected-by-current : true | false
+#
+# La dernière étiquette est une PRÉDICTION formulée avant la mesure, à partir
+# de la lecture du code du scanner. Elle rend l'expérience falsifiable : soit
+# le scanner détecte ce qu'on prévoit, soit l'analyse du code était erronée.
+#
+# DEUX GROUPES
+# ------------
+# Groupe A — défauts que le scanner actuel devrait détecter (5 types couverts
+#            par MITRE_MAPPING). Mesure du rappel sur son périmètre déclaré.
+#
+# Groupe B — défauts réels que le scanner N'examine PAS : capabilities,
+#            allowPrivilegeEscalation, hostPID, hostPath, exécution en root
+#            malgré un securityContext présent. Mesure des angles morts.
+#
+# Groupe C — configurations durcies, dont deux pièges destinés à provoquer des
+#            faux positifs.
+#
+# ⚠ AVERTISSEMENT
+# ---------------
+# Ces manifestes créent des conteneurs privilégiés avec accès à l'hôte. À
+# déployer EXCLUSIVEMENT sur un cluster de test jetable, jamais en production
+# ni sur un cluster partagé. Le montage de /var/run/docker.sock équivaut à
+# donner un accès root à la machine hôte.
+#
+# USAGE
+#   kubectl apply -f k8s/benchmark/vuln-benchmark.yaml
+#   python3 scripts/vuln_benchmark.py
+#   kubectl delete namespace aikube-vuln
+# ==============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-vuln
+  labels:
+    aikube.vuln/purpose: scanner-evaluation
+    # Namespace sans NetworkPolicy : vulnérabilité en soi (NoNetworkPolicy)
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: no-network-policy
+    aikube.vuln/technique: T1046
+    aikube.vuln/detected-by-current: "true"
+
+---
+# ═════════════════════════════════════════════════════════════════════════════
+# GROUPE A — défauts couverts par le scanner actuel
+# ═════════════════════════════════════════════════════════════════════════════
+
+---
+# A1 — Conteneur privilégié
+# privileged: true accorde toutes les capacités du noyau et l'accès aux
+# périphériques de l'hôte. Évasion de conteneur triviale.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-privileged
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: privileged-container
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "true"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        privileged: true
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# A2 — Réseau de l'hôte
+# hostNetwork expose toutes les interfaces de l'hôte au conteneur, permettant
+# la découverte de services et l'interception de trafic.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-hostnetwork
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: host-network
+    aikube.vuln/technique: T1046
+    aikube.vuln/detected-by-current: "true"
+spec:
+  hostNetwork: true
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# A3 — Secret en variable d'environnement
+# Valeur en clair, lisible par quiconque peut décrire le pod ou lire etcd.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-secret-env
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: secret-in-env
+    aikube.vuln/technique: T1552
+    aikube.vuln/detected-by-current: "true"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      env:
+        - name: DATABASE_PASSWORD
+          value: "SuperSecret123!"
+        - name: API_TOKEN
+          value: "sk-fake-token-for-testing-only"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# A4 — Absence de securityContext
+# Le conteneur s'exécute avec les valeurs par défaut, c'est-à-dire root.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-no-seccontext
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: missing-security-context
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "true"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ═════════════════════════════════════════════════════════════════════════════
+# GROUPE B — angles morts prédits du scanner actuel
+# ═════════════════════════════════════════════════════════════════════════════
+
+---
+# B1 — Capacité SYS_ADMIN
+# Équivaut à privileged sans le drapeau. Le scanner n'examine pas capabilities :
+# il verra un securityContext présent et non privilégié, donc rien à signaler.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-cap-sysadmin
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: dangerous-capability
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "false"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        privileged: false
+        capabilities:
+          add: ["SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# B2 — Escalade de privilèges autorisée
+# allowPrivilegeEscalation: true permet à un processus d'acquérir plus de
+# privilèges que son parent (binaires setuid).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-privesc
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: allow-privilege-escalation
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "false"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        privileged: false
+        allowPrivilegeEscalation: true
+        runAsUser: 0
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# B3 — Espace de processus de l'hôte
+# hostPID rend visibles tous les processus de l'hôte, permettant l'injection
+# et la lecture de mémoire d'autres processus.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-hostpid
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: host-pid-namespace
+    aikube.vuln/technique: T1613
+    aikube.vuln/detected-by-current: "false"
+spec:
+  hostPID: true
+  hostIPC: true
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# B4 — Montage du système de fichiers de l'hôte
+# Monter la racine de l'hôte en écriture équivaut à un accès root complet à la
+# machine : écriture dans /etc, accès aux clés, modification des binaires.
+# C'est la vulnérabilité la plus grave du banc, et le scanner ne l'examine pas.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-hostpath
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: hostpath-mount
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "false"
+spec:
+  volumes:
+    - name: host-root
+      hostPath:
+        path: /
+        type: Directory
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      volumeMounts:
+        - name: host-root
+          mountPath: /host
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# B5 — Exécution en root malgré un securityContext
+# Le scanner teste `if not securityContext` puis `elif privileged`. Un contexte
+# présent, non privilégié, mais avec runAsUser: 0 échappe aux deux branches.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-runasroot
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: run-as-root
+    aikube.vuln/technique: T1611
+    aikube.vuln/detected-by-current: "false"
+spec:
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        privileged: false
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# B6 — Jeton de compte de service monté automatiquement
+# Combiné à un rôle permissif, permet l'interrogation de l'API Kubernetes
+# depuis le conteneur compromis.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vuln-sa
+  namespace: aikube-vuln
+automountServiceAccountToken: true
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vuln-permissive-binding
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: permissive-rbac
+    aikube.vuln/technique: T1078
+    aikube.vuln/detected-by-current: "false"
+subjects:
+  - kind: ServiceAccount
+    name: vuln-sa
+    namespace: aikube-vuln
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vuln-sa-token
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: vulnerable
+    aikube.vuln/type: automount-sa-token
+    aikube.vuln/technique: T1528
+    aikube.vuln/detected-by-current: "false"
+spec:
+  serviceAccountName: vuln-sa
+  automountServiceAccountToken: true
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ═════════════════════════════════════════════════════════════════════════════
+# GROUPE C — configurations durcies et pièges à faux positifs
+# ═════════════════════════════════════════════════════════════════════════════
+
+---
+# C1 — Pod correctement durci
+# Référence positive : aucun signalement attendu.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hardened-reference
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: hardened
+    aikube.vuln/type: fully-hardened
+    aikube.vuln/detected-by-current: "false"
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        allowPrivilegeEscalation: false
+        privileged: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# C2 — PIÈGE : secret référencé correctement
+# Variable nommée PASSWORD, mais alimentée par secretKeyRef. Un scanner qui se
+# fierait au seul nom de la variable produirait un faux positif.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: proper-secret
+  namespace: aikube-vuln
+type: Opaque
+stringData:
+  password: "stored-properly"
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hardened-secret-ref
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: hardened
+    aikube.vuln/type: proper-secret-reference-trap
+    aikube.vuln/detected-by-current: "false"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      env:
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: proper-secret
+              key: password
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# C3 — PIÈGE : nom de variable trompeur
+# Le scanner recherche les sous-chaînes PASSWORD, SECRET, TOKEN, KEY, API dans
+# le NOM de la variable. « API_URL » et « MONKEY_COUNT » contiennent
+# respectivement API et KEY sans être des secrets. Faux positif attendu.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hardened-misleading-env
+  namespace: aikube-vuln
+  labels:
+    aikube.vuln/expected: hardened
+    aikube.vuln/type: misleading-env-name-trap
+    aikube.vuln/detected-by-current: "false"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      env:
+        - name: API_URL
+          value: "https://api.example.com/v1"
+        - name: MONKEY_COUNT
+          value: "42"
+        - name: PUBLIC_KEY_ALGORITHM
+          value: "RSA"
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# C4 — Namespace protégé par une NetworkPolicy
+# Vérifie que la règle NoNetworkPolicy ne signale pas un namespace conforme.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-vuln-protected
+  labels:
+    aikube.vuln/purpose: scanner-evaluation
+    aikube.vuln/expected: hardened
+    aikube.vuln/type: namespace-with-policy
+    aikube.vuln/detected-by-current: "false"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: aikube-vuln-protected
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hardened-in-protected-ns
+  namespace: aikube-vuln-protected
+  labels:
+    aikube.vuln/expected: hardened
+    aikube.vuln/type: hardened-with-policy
+    aikube.vuln/detected-by-current: "false"
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }

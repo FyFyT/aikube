@@ -1,0 +1,102 @@
+--- frontend/src/utils/NotificationsContext.jsx	2026-10-28 13:30:49.206869958 +0300
++++ frontend/src/utils/NotificationsContext.jsx	2026-10-28 13:32:26.555701724 +0300
+@@ -55,6 +55,13 @@
+   return { resource: m?.[1] || null, namespace: m?.[2] || n.namespace || null }
+ }
+ 
++// Pods d'un même Deployment : « web-7c9f6d8b5-2xk4p » -> « web ». Sert à ne pas
++// annoncer « résolu » quand un pod en panne est simplement remplacé par un autre
++// pod du même Deployment qui a le même problème.
++const ownerKey = (n) => `${n.namespace || '-'}|${n.type || '-'}|${(n.resource || '').replace(/-[a-z0-9]{6,10}-[a-z0-9]{5}$/, '').replace(/-[a-z0-9]{5}$/, '')}`
++
++const RESOLVED_TTL_MS = 15 * 60 * 1000   // une alerte résolue reste visible 15 min
++
+ const podRoute = (resource, namespace) => {
+   const p = new URLSearchParams()
+   if (namespace) p.set('namespace', namespace)
+@@ -67,6 +74,7 @@
+   const [seen, setSeen]           = useState(loadSeen)
+   const [highlight, setHighlight] = useState(() => new Set())
+   const [panelOpen, setPanelOpen] = useState(false)
++  const [resolved, setResolved]   = useState([])   // alertes disparues récemment
+   const { pathname } = useLocation()
+ 
+   // ── Données ────────────────────────────────────────────────────────────────
+@@ -83,7 +91,7 @@
+   })
+ 
+   // ── Normalisation + déduplication ──────────────────────────────────────────
+-  const allNotifs = useMemo(() => {
++  const activeNotifs = useMemo(() => {
+     const anomalies = (detect?.problems || []).map(p => ({
+       uid:       makeUid('anomaly', p.namespace, p.resource, p.id),
+       id:        p.id,
+@@ -127,6 +135,50 @@
+     return [...anomalies, ...devops]
+   }, [detect, notifs])
+ 
++  // ── Alertes résolues ───────────────────────────────────────────────────────
++  // Une alerte présente au relevé précédent et absente du relevé courant est
++  // annoncée comme résolue, sauf si le même problème touche toujours le même
++  // Deployment (pod remplacé). Le premier relevé ne produit rien.
++  const prevActiveRef = useRef(null)
++  useEffect(() => {
++    if (!detect && !notifs) return
++    const prev = prevActiveRef.current
++    prevActiveRef.current = activeNotifs
++    if (!prev) return
++    const nowUids   = new Set(activeNotifs.map(n => n.uid))
++    const nowOwners = new Set(activeNotifs.map(ownerKey))
++    const gone = prev.filter(n => !nowUids.has(n.uid) && !nowOwners.has(ownerKey(n)))
++    if (gone.length === 0) return
++    const at = new Date()
++    const hhmm = at.toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' })
++    setResolved(r => [
++      ...gone.map(n => ({
++        ...n,
++        uid:      `resolved:${n.uid}:${at.getTime()}`,
++        source:   'resolved',
++        type:     'resolved',
++        severity: 'resolved',
++        title:    `Résolu : ${n.resource || n.title}`,
++        message:  `${n.type === 'anomaly' ? n.title : n.title} n'est plus détecté (pod rétabli ou supprimé).`,
++        time:     hhmm,
++        fix:      null,
++        expires:  at.getTime() + RESOLVED_TTL_MS,
++      })),
++      ...r,
++    ].slice(0, 20))
++  }, [activeNotifs, detect, notifs])
++
++  // Retrait des annonces « résolu » après 15 minutes
++  useEffect(() => {
++    const t = setInterval(() => setResolved(r => {
++      const kept = r.filter(n => n.expires > Date.now())
++      return kept.length === r.length ? r : kept
++    }), 30000)
++    return () => clearInterval(t)
++  }, [])
++
++  const allNotifs = useMemo(() => [...activeNotifs, ...resolved], [activeNotifs, resolved])
++
+   // Clé stable : évite les boucles d'effets dues à l'identité du tableau
+   const uidsKey = useMemo(() => allNotifs.map(n => n.uid).join('|'), [allNotifs])
+   const notifsRef = useRef([])
+@@ -197,7 +249,7 @@
+     const unreadCritical = allNotifs.filter(n => !seen.has(n.uid) && n.severity === 'critical').length
+     return {
+       allNotifs,
+-      total:          allNotifs.length,
++      total:          activeNotifs.length,
+       critical:       allNotifs.filter(n => n.severity === 'critical').length,
+       unreadCount:    unread.length,
+       unreadCritical,
+@@ -206,7 +258,7 @@
+       markRead, markAllRead, markAllUnread,
+       panelOpen, setPanelOpen,
+     }
+-  }, [allNotifs, seen, highlight, panelOpen, markRead, markAllRead, markAllUnread])
++  }, [allNotifs, activeNotifs, seen, highlight, panelOpen, markRead, markAllRead, markAllUnread])
+ 
+   return (
+     <NotificationsContext.Provider value={value}>

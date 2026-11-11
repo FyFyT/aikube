@@ -1,0 +1,322 @@
+---
+# ==============================================================================
+# AI-Kube — Banc d'évaluation, extension « zone grise »
+# ==============================================================================
+#
+# POURQUOI CETTE EXTENSION
+# ------------------------
+# Le premier banc a produit 1.000 de F1 pour les trois détecteurs. Un score
+# parfait ne démontre pas la qualité des détecteurs : il démontre que le banc
+# ne les distingue pas. Ses cas étaient tous non ambigus — pannes franches d'un
+# côté, pods intacts de l'autre — alors que les trois détecteurs ne divergent
+# que dans l'intervalle entre les deux.
+#
+# Cette extension peuple précisément cet intervalle. Chaque cas est construit
+# pour qu'AU MOINS UN détecteur se trompe, et l'étiquette de vérité indique la
+# réponse attendue d'un opérateur humain expérimenté.
+#
+# LE DÉSACCORD ATTENDU EST DOCUMENTÉ
+# ----------------------------------
+# L'étiquette aikube.bench/trap indique quel détecteur le cas met en défaut.
+# C'est une PRÉDICTION formulée avant la mesure, ce qui permet de la confirmer
+# ou de l'infirmer — et rend l'expérience falsifiable plutôt que descriptive.
+#
+# NOTE SUR LA SUBJECTIVITÉ DE LA VÉRITÉ TERRAIN
+# ---------------------------------------------
+# Contrairement au premier banc, où « le pod ne démarre pas » est un fait
+# objectif, certains cas ici relèvent du jugement : un pod ayant redémarré
+# deux fois puis stabilisé est-il une anomalie ? La réponse retenue est
+# « non » — un incident résolu n'est pas un incident en cours. Cette
+# convention doit être explicitée dans le mémoire, car un autre choix
+# changerait les résultats. C'est une limite assumée, pas un défaut caché.
+#
+# USAGE — s'ajoute au banc principal, même namespace
+#   kubectl apply -f k8s/benchmark/anomaly-benchmark.yaml
+#   kubectl apply -f k8s/benchmark/anomaly-benchmark-edge.yaml
+#   python3 scripts/anomaly_benchmark.py --no-deploy --wait 300
+# ==============================================================================
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 1 — Incident résolu
+# Le conteneur échoue deux fois, puis démarre normalement et reste stable.
+# Le compteur d'échecs est conservé dans un volume emptyDir, qui survit aux
+# redémarrages de conteneur.
+#
+# Vérité : SAIN — le pod fonctionne, l'incident appartient au passé.
+# Piège v1 : 2 redémarrages < 3 → correct par accident (le bon résultat pour
+#            la mauvaise raison : un seuil à 2 l'aurait fait échouer).
+# Piège v2 : 2 redémarrages sur ~5 min = ~24/h ≫ 0,5/h → FAUX POSITIF attendu.
+# C'est le cas central de l'extension : il teste la faiblesse de la
+# normalisation par le taux sur les pods jeunes.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-recovered
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: recovered-incident
+    aikube.bench/trap: rules-v2-false-positive
+spec:
+  restartPolicy: Always
+  volumes:
+    - name: state
+      emptyDir: {}
+  containers:
+    - name: recovers
+      image: busybox:1.36
+      volumeMounts:
+        - name: state
+          mountPath: /state
+      command:
+        - sh
+        - -c
+        - |
+          COUNT=$(cat /state/attempts 2>/dev/null || echo 0)
+          COUNT=$((COUNT + 1))
+          echo $COUNT > /state/attempts
+          if [ "$COUNT" -le 2 ]; then
+            echo "tentative $COUNT — échec simulé"
+            sleep 3
+            exit 1
+          fi
+          echo "tentative $COUNT — service stabilisé"
+          while true; do sleep 30; done
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 2 — Redémarrage unique au démarrage
+# Un seul échec initial, puis fonctionnement nominal. Situation extrêmement
+# courante en production (dépendance non encore disponible au premier essai).
+#
+# Vérité : SAIN.
+# Piège v2 : 1 redémarrage sur ~5 min = ~12/h ≫ 0,5/h → FAUX POSITIF attendu.
+# Montre que le seuil de taux, calibré sur des pods matures, est inadapté aux
+# pods jeunes. Un correctif possible — âge minimum avant évaluation — sera
+# discuté en perspectives.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-single-restart
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: single-startup-restart
+    aikube.bench/trap: rules-v2-false-positive
+spec:
+  restartPolicy: Always
+  volumes:
+    - name: state
+      emptyDir: {}
+  containers:
+    - name: retries-once
+      image: busybox:1.36
+      volumeMounts:
+        - name: state
+          mountPath: /state
+      command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /state/started ]; then
+            touch /state/started
+            echo "dépendance indisponible au premier essai"
+            sleep 2
+            exit 1
+          fi
+          echo "démarrage nominal"
+          while true; do sleep 30; done
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 3 — Dégradation lente
+# Redémarre environ toutes les 90 secondes : sur 5 minutes, 2 à 3 échecs.
+# Le pod ne s'effondre pas, mais ne se stabilise jamais non plus.
+#
+# Vérité : ANOMALIE — la dégradation est continue.
+# Piège v1 : reste possiblement sous les 3 redémarrages → FAUX NÉGATIF attendu.
+# C'est le miroir du cas 1 : là où v2 surréagit, v1 sous-réagit.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-slow-degradation
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: slow-degradation
+    aikube.bench/trap: rules-v1-false-negative
+spec:
+  restartPolicy: Always
+  containers:
+    - name: degrading
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'service dégradé'; sleep 90; exit 1"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 4 — Jamais prêt, jamais en échec
+# Le conteneur tourne sans erreur, mais sa sonde de disponibilité échoue
+# indéfiniment. Aucun redémarrage : la sonde de disponibilité retire le pod du
+# service sans le relancer, contrairement à la sonde de vivacité.
+#
+# Vérité : ANOMALIE — le pod ne rend aucun service.
+# Piège : les TROIS détecteurs → phase Running, 0 redémarrage, nœud assigné.
+# Aucun n'examine la condition Ready. Faux négatif unanime attendu.
+# Ce cas ne mesure pas un réglage : il révèle une limite structurelle du
+# vecteur de features. C'est le cas le plus instructif de l'extension.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-never-ready
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: never-ready
+    aikube.bench/trap: all-detectors-blind
+spec:
+  containers:
+    - name: running-but-useless
+      image: busybox:1.36
+      command: ["sh", "-c", "while true; do sleep 30; done"]
+      readinessProbe:
+        exec:
+          command: ["sh", "-c", "exit 1"]
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        failureThreshold: 1
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 5 — Conteneur d'initialisation en échec
+# Le pod reste bloqué en Init:CrashLoopBackOff. Sa phase est Pending, mais
+# pour une raison sans rapport avec la planification.
+#
+# Vérité : ANOMALIE.
+# Piège : la règle « Pending » le détecte pour le mauvais motif — le
+# diagnostic affiché sera « pod non planifié » alors qu'il l'est parfaitement.
+# Bon résultat, mauvaise explication : distinction importante quand le système
+# prétend fournir des explications.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-init-failure
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: init-container-failure
+    aikube.bench/trap: correct-verdict-wrong-reason
+spec:
+  restartPolicy: Always
+  initContainers:
+    - name: failing-init
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'migration impossible'; sleep 5; exit 1"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+  containers:
+    - name: never-starts
+      image: busybox:1.36
+      command: ["sh", "-c", "while true; do sleep 30; done"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 6 — Tâche terminée avec succès
+# Un Job achevé normalement. Phase Succeeded, ni Running ni Failed.
+#
+# Vérité : SAIN — c'est le déroulement nominal d'une tâche ponctuelle.
+# Piège : phase inattendue par des règles conçues autour de Running / Pending /
+# Failed. Le Random Forest, dont les features encodent is_pending et is_failed
+# mais aucun indicateur de succès, verra un pod sans nœud actif.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: edge-completed-job
+  namespace: aikube-bench
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        aikube.bench/expected: healthy
+        aikube.bench/type: completed-job
+        aikube.bench/trap: unexpected-phase
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: batch-task
+          image: busybox:1.36
+          command: ["sh", "-c", "echo 'traitement terminé'; sleep 10; exit 0"]
+          resources:
+            requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ZONE GRISE 7 — Redémarrages nombreux mais anciens
+# 4 échecs rapides au démarrage, puis stabilité durable. Sur une fenêtre de
+# 5 minutes le taux reste élevé ; sur une heure il deviendrait négligeable.
+#
+# Vérité : SAIN.
+# Piège v1 : 4 ≥ 3 → FAUX POSITIF attendu.
+# Piège v2 : taux encore élevé sur une courte fenêtre → FAUX POSITIF attendu.
+# Démontre que le résultat DÉPEND DE LA FENÊTRE D'OBSERVATION — argument
+# central pour justifier que la durée d'attente soit rapportée avec les
+# résultats plutôt que traitée comme un détail d'implémentation.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: edge-old-restarts
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: many-old-restarts
+    aikube.bench/trap: observation-window-dependent
+spec:
+  restartPolicy: Always
+  volumes:
+    - name: state
+      emptyDir: {}
+  containers:
+    - name: settles-eventually
+      image: busybox:1.36
+      volumeMounts:
+        - name: state
+          mountPath: /state
+      command:
+        - sh
+        - -c
+        - |
+          COUNT=$(cat /state/attempts 2>/dev/null || echo 0)
+          COUNT=$((COUNT + 1))
+          echo $COUNT > /state/attempts
+          if [ "$COUNT" -le 4 ]; then
+            echo "échec de démarrage $COUNT/4"
+            exit 1
+          fi
+          echo "stabilisé après $((COUNT - 1)) tentatives"
+          while true; do sleep 30; done
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }

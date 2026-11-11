@@ -1,0 +1,91 @@
+# ==============================================================================
+# AI-Kube — intégration continue
+# ==============================================================================
+# Trois contrôles à chaque push et pull request :
+#   backend   Python : compilation de tout le code + tests unitaires (pytest)
+#   frontend  React : construction de production (vite build)
+#   sécurité  Trivy : vulnérabilités des dépendances, secrets oubliés dans le dépôt,
+#             mauvaises configurations des manifestes Kubernetes et du workflow
+# Les résultats s'affichent dans l'application (DevOps → CI/CD) si GITHUB_REPO
+# est renseigné dans .env.
+#
+# Trivy est en mode RAPPORT (exit-code 0) : les bancs de test de sécurité du
+# mémoire contiennent volontairement des manifestes vulnérables. Passer exit-code
+# à 1 pour en faire une barrière bloquante sur le code applicatif.
+# ==============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Compilation de tout le code Python
+        run: python -m compileall -q backend scripts
+      - name: Tests unitaires
+        env:
+          PYTHONPATH: backend:scripts
+        run: pytest -q tests/unit
+
+  frontend:
+    name: Frontend (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Construction de production
+        run: npm run build
+
+  security:
+    name: Sécurité (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Analyse du dépôt (vulnérabilités, secrets, configuration)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          format: table
+          output: trivy-report.txt
+          exit-code: "0"
+      - name: Résumé
+        if: always()
+        run: |
+          echo '## Rapport Trivy (HIGH, CRITICAL)' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          head -c 60000 trivy-report.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-report
+          path: trivy-report.txt

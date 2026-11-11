@@ -1,0 +1,183 @@
+# ==============================================================================
+# AI-Kube — Banc de REMÉDIATION (chapitre 7)
+# ==============================================================================
+# Question mesurée : la remédiation automatique corrige-t-elle le défaut SANS
+# casser l'application ? Chaque Deployment porte un défaut et une PRÉDICTION,
+# formulée avant la mesure, du résultat du correctif déterministe :
+#
+#   aikube.rem/defect        : défaut injecté
+#   aikube.rem/expect-auto   : success | regression | no-auto-fix
+#
+# Les cas « regression » sont voulus : le correctif naïf casse l'application
+# (nginx officiel exige root et écrit dans /var/cache/nginx). Ils testent le
+# contrôle de non-régression et le retour arrière automatique, puis permettent
+# de comparer avec le correctif proposé par l'IA.
+#
+# ⚠ Conteneurs privilégiés et montage de /etc de l'hôte : cluster de test
+#   uniquement.
+#
+# USAGE
+#   kubectl apply -f k8s/benchmark/remediation-benchmark.yaml
+#   → page Cybersécurité, filtre namespace aikube-remediation
+#   kubectl delete namespace aikube-remediation
+# ==============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-remediation
+  labels:
+    aikube.rem/defect: no-network-policy
+    aikube.rem/expect-auto: success
+---
+# R1 — privilégié : le correctif (privileged: false) ne gêne pas un simple sleep
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-privileged
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: privileged, aikube.rem/expect-auto: success}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-privileged}}
+  template:
+    metadata: {labels: {app: rem-privileged}}
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sleep", "100000"]
+          securityContext: {privileged: true, runAsUser: 1000, runAsNonRoot: true}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 50m, memory: 32Mi}}
+---
+# R2 — capacités dangereuses + escalade : correctif sans effet sur l'application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-capabilities
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: dangerous-capability, aikube.rem/expect-auto: success}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-capabilities}}
+  template:
+    metadata: {labels: {app: rem-capabilities}}
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sleep", "100000"]
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: true
+            capabilities: {add: ["SYS_ADMIN", "NET_ADMIN"]}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 50m, memory: 32Mi}}
+---
+# R3 — nginx officiel en root : forcer runAsNonRoot le fait planter (port 80,
+#      /var/cache/nginx). PRÉDICTION : régression → retour arrière automatique.
+#      Le correctif IA attendu : nginxinc/nginx-unprivileged sur le port 8080.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-nginx-root
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: run-as-root, aikube.rem/expect-auto: regression}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-nginx-root}}
+  template:
+    metadata: {labels: {app: rem-nginx-root}}
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27
+          ports: [{containerPort: 80}]
+          securityContext: {allowPrivilegeEscalation: false}
+          readinessProbe: {httpGet: {path: /, port: 80}, periodSeconds: 5}
+          resources: {requests: {cpu: 20m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+# R4 — secret en clair : extraction automatique vers un Secret
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-secret-env
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: secret-in-env, aikube.rem/expect-auto: success}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-secret-env}}
+  template:
+    metadata: {labels: {app: rem-secret-env}}
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sh", "-c", "test -n \"$DB_PASSWORD\" && sleep 100000"]
+          env:
+            - name: DB_PASSWORD
+              value: "demo-password-123"
+            - name: DB_HOST
+              value: "postgres.default.svc"
+          securityContext: {runAsUser: 1000, runAsNonRoot: true, allowPrivilegeEscalation: false}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 50m, memory: 32Mi}}
+---
+# R5 — montage de /etc de l'hôte : pas de correctif automatique sûr.
+#      PRÉDICTION : correction possible seulement par l'IA (emptyDir).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-hostpath
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: hostpath-sensitive, aikube.rem/expect-auto: no-auto-fix}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-hostpath}}
+  template:
+    metadata: {labels: {app: rem-hostpath}}
+    spec:
+      volumes:
+        - name: host-etc
+          hostPath: {path: /etc, type: Directory}
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sleep", "100000"]
+          volumeMounts: [{name: host-etc, mountPath: /host-etc, readOnly: true}]
+          securityContext: {runAsUser: 1000, runAsNonRoot: true, allowPrivilegeEscalation: false}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 50m, memory: 32Mi}}
+---
+# R6 — jeton d'un compte « edit » monté : automount false, l'appli n'utilise pas l'API
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rem-sa
+  namespace: aikube-remediation
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: rem-sa-edit
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: permissive-rbac, aikube.rem/expect-auto: no-auto-fix}
+subjects: [{kind: ServiceAccount, name: rem-sa, namespace: aikube-remediation}]
+roleRef: {kind: ClusterRole, name: edit, apiGroup: rbac.authorization.k8s.io}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rem-sa-token
+  namespace: aikube-remediation
+  labels: {aikube.rem/defect: automount-sa-token, aikube.rem/expect-auto: success}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: rem-sa-token}}
+  template:
+    metadata: {labels: {app: rem-sa-token}}
+    spec:
+      serviceAccountName: rem-sa
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: ["sleep", "100000"]
+          securityContext: {runAsUser: 1000, runAsNonRoot: true, allowPrivilegeEscalation: false}
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {cpu: 50m, memory: 32Mi}}

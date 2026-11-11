@@ -1,0 +1,36 @@
+--- frontend/src/components/NotificationCenter.jsx	2026-10-28 13:30:49.208287560 +0300
++++ frontend/src/components/NotificationCenter.jsx	2026-10-28 13:32:26.557425726 +0300
+@@ -12,7 +12,7 @@
+ import { createPortal } from 'react-dom'
+ import { useNavigate } from 'react-router-dom'
+ import { useNotifications } from '../utils/NotificationsContext'
+-import { Bell, X, AlertCircle, Info } from 'lucide-react'
++import { Bell, X, AlertCircle, Info, CheckCircle2 } from 'lucide-react'
+ 
+ const PANEL_WIDTH = 340
+ 
+@@ -75,11 +75,11 @@
+ 
+   // ── Couleurs ───────────────────────────────────────────────────────────────
+   const severityColor = (s) =>
+-    s === 'critical' ? 'var(--color-red)' : s === 'warning' ? 'var(--color-amber)' : 'var(--color-blue)'
++    s === 'critical' ? 'var(--color-red)' : s === 'warning' ? 'var(--color-amber)' : s === 'resolved' ? 'var(--ok)' : 'var(--color-blue)'
+   const severityBg = (s) =>
+-    s === 'critical' ? 'var(--color-danger-bg)' : s === 'warning' ? 'var(--color-warning-bg)' : 'var(--color-info-bg)'
++    s === 'critical' ? 'var(--color-danger-bg)' : s === 'warning' ? 'var(--color-warning-bg)' : s === 'resolved' ? 'var(--color-success-bg)' : 'var(--color-info-bg)'
+   const severityBorder = (s) =>
+-    s === 'critical' ? 'var(--color-danger-border)' : s === 'warning' ? 'var(--color-warning-border)' : 'var(--color-info-border)'
++    s === 'critical' ? 'var(--color-danger-border)' : s === 'warning' ? 'var(--color-warning-border)' : s === 'resolved' ? 'var(--color-success-border)' : 'var(--color-info-border)'
+ 
+   // ── Panel ──────────────────────────────────────────────────────────────────
+   const panel = (
+@@ -139,7 +139,8 @@
+             >
+               {/* Icône severity */}
+               <div style={{ flexShrink: 0, marginTop: 2, color: severityColor(notif.severity), display: 'flex' }}>
+-                {notif.severity === 'critical' || notif.type === 'anomaly' ? <AlertCircle size={15} /> : <Info size={15} />}
++                {notif.severity === 'resolved' ? <CheckCircle2 size={15} />
++                  : notif.severity === 'critical' || notif.type === 'anomaly' ? <AlertCircle size={15} /> : <Info size={15} />}
+               </div>
+ 
+               {/* Contenu */}

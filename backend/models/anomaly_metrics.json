@@ -1,0 +1,140 @@
+{
+  "model": "RandomForestClassifier",
+  "trained_at": "2026-06-11T11:16:15.716368",
+  "dataset": {
+    "total_samples": 700,
+    "normal_samples": 464,
+    "anomaly_samples": 236,
+    "train_size": 560,
+    "test_size": 140,
+    "features": [
+      "restart_count",
+      "is_pending",
+      "is_failed",
+      "pod_age_minutes",
+      "namespace_risk_score",
+      "has_node",
+      "labels_count",
+      "restart_rate",
+      "is_system_ns"
+    ],
+    "noise_level": "8% (r\u00e9aliste)"
+  },
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 8,
+    "min_samples_split": 8,
+    "min_samples_leaf": 4,
+    "max_features": "sqrt",
+    "class_weight": "balanced"
+  },
+  "metrics": {
+    "accuracy": 0.9429,
+    "precision": 0.9333,
+    "recall": 0.8936,
+    "f1_score": 0.913,
+    "specificity": 0.9677,
+    "roc_auc": 0.9472,
+    "cv_f1_mean": 0.8727,
+    "cv_f1_std": 0.0472
+  },
+  "confusion_matrix": {
+    "true_negative": 90,
+    "false_positive": 3,
+    "false_negative": 5,
+    "true_positive": 42
+  },
+  "feature_importance": {
+    "pod_age_minutes": 0.2932,
+    "restart_rate": 0.217,
+    "has_node": 0.1249,
+    "restart_count": 0.1133,
+    "labels_count": 0.0997,
+    "is_pending": 0.0732,
+    "namespace_risk_score": 0.0336,
+    "is_failed": 0.0333,
+    "is_system_ns": 0.0117
+  },
+  "roc_curve": [
+    {
+      "fpr": 0.0,
+      "tpr": 0.0
+    },
+    {
+      "fpr": 0.0,
+      "tpr": 0.021
+    },
+    {
+      "fpr": 0.0,
+      "tpr": 0.085
+    },
+    {
+      "fpr": 0.011,
+      "tpr": 0.085
+    },
+    {
+      "fpr": 0.011,
+      "tpr": 0.83
+    },
+    {
+      "fpr": 0.022,
+      "tpr": 0.83
+    },
+    {
+      "fpr": 0.022,
+      "tpr": 0.894
+    },
+    {
+      "fpr": 0.14,
+      "tpr": 0.894
+    },
+    {
+      "fpr": 0.14,
+      "tpr": 0.915
+    },
+    {
+      "fpr": 0.172,
+      "tpr": 0.915
+    },
+    {
+      "fpr": 0.172,
+      "tpr": 0.936
+    },
+    {
+      "fpr": 0.312,
+      "tpr": 0.936
+    },
+    {
+      "fpr": 0.312,
+      "tpr": 0.957
+    },
+    {
+      "fpr": 0.43,
+      "tpr": 0.957
+    },
+    {
+      "fpr": 0.43,
+      "tpr": 0.979
+    },
+    {
+      "fpr": 0.882,
+      "tpr": 0.979
+    },
+    {
+      "fpr": 0.914,
+      "tpr": 0.979
+    },
+    {
+      "fpr": 0.989,
+      "tpr": 0.979
+    },
+    {
+      "fpr": 0.989,
+      "tpr": 1.0
+    },
+    {
+      "fpr": 1.0,
+      "tpr": 1.0
+    }
+  ]
+}

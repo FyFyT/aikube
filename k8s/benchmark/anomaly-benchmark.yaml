@@ -1,0 +1,396 @@
+---
+# ==============================================================================
+# AI-Kube — Banc d'évaluation des détecteurs d'anomalies
+# ==============================================================================
+#
+# PRINCIPE MÉTHODOLOGIQUE
+# -----------------------
+# L'évaluation d'un détecteur exige une vérité terrain. Sur un cluster de
+# production sain, il n'existe aucun cas positif : un détecteur qui ne signale
+# jamais rien obtient alors le même résultat qu'un détecteur parfait. Les deux
+# hypothèses sont indiscernables.
+#
+# Ce banc résout le problème par CONSTRUCTION : chaque pod est déployé avec un
+# défaut connu et documenté, ou volontairement sain. L'étiquette de vérité est
+# portée par le pod lui-même :
+#
+#     aikube.bench/expected : anomaly | healthy
+#     aikube.bench/type     : nature du défaut injecté
+#     aikube.bench/detectable-by : détecteurs censés le repérer
+#
+# Le script d'évaluation lit ces étiquettes plutôt qu'une liste externe, ce qui
+# rend impossible toute désynchronisation entre le déploiement et la référence.
+#
+# ÉQUILIBRE DES CLASSES
+# ---------------------
+# 8 pods anormaux, 6 pods sains. Les cas sains ne sont pas décoratifs : sans
+# eux, seul le rappel serait mesurable, et un détecteur répondant « anomalie »
+# à tout obtiendrait un rappel parfait. Ce sont eux qui révèlent les faux
+# positifs — précisément le défaut des règles v1 mis en évidence sur le
+# cluster réel.
+#
+# PIÈGES DÉLIBÉRÉS
+# ----------------
+# Trois pods sains sont conçus pour ressembler à des anomalies :
+#   · old-restarter    : nombreux redémarrages, mais étalés dans le temps
+#   · slow-starter     : démarrage lent, sonde de disponibilité tolérante
+#   · high-memory      : consommation élevée mais sous la limite
+# Ils testent la capacité à ne PAS surréagir. C'est là que se joue l'écart
+# entre le seuil absolu et le taux normalisé.
+#
+# USAGE
+#   kubectl apply -f anomaly-benchmark.yaml
+#   python3 scripts/anomaly_benchmark.py --wait 240
+#   kubectl delete namespace aikube-bench
+#
+# AVERTISSEMENT : à déployer sur un cluster de test uniquement.
+# ==============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-bench
+  labels:
+    aikube.bench/purpose: detector-evaluation
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 1 — CrashLoopBackOff
+# Le conteneur sort en erreur immédiatement. Kubernetes le relance avec un
+# backoff exponentiel (10s, 20s, 40s…). Le compteur de redémarrages grimpe
+# vite : c'est le cas le plus discriminant pour la règle fondée sur le taux.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-crashloop
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: crashloop
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  restartPolicy: Always
+  containers:
+    - name: failing
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'démarrage puis échec'; sleep 2; exit 1"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "32Mi", cpu: "50m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 2 — CrashLoopBackOff rapide
+# Sortie immédiate sans temporisation : accumule les redémarrages plus vite
+# encore. Permet de vérifier que le taux calculé reste cohérent quand l'âge du
+# pod est très faible (division par un dénominateur proche de zéro).
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-crashloop-fast
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: crashloop-fast
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  restartPolicy: Always
+  containers:
+    - name: failing
+      image: busybox:1.36
+      command: ["sh", "-c", "exit 1"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "32Mi", cpu: "50m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 3 — ImagePullBackOff
+# Image inexistante. Le pod reste Pending sans jamais démarrer, et le compteur
+# de redémarrages reste à zéro : une règle fondée uniquement sur les
+# redémarrages est structurellement aveugle à ce cas.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-imagepull
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: image-pull-error
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  containers:
+    - name: nonexistent
+      image: registry.invalid/aikube/does-not-exist:v0
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 4 — Pending par ressources inatteignables
+# Demande 500 cœurs. Aucun nœud ne peut satisfaire la contrainte, le
+# planificateur laisse le pod en attente indéfiniment.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-unschedulable-cpu
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: unschedulable-resources
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  containers:
+    - name: greedy
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      resources:
+        requests: { cpu: "500", memory: "1Ti" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 5 — Pending par sélecteur de nœud impossible
+# Variante de contrainte non satisfiable, par affinité plutôt que par
+# ressources. Vérifie que la détection ne dépend pas de la cause précise.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-unschedulable-selector
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: unschedulable-selector
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  nodeSelector:
+    aikube.bench/nonexistent-hardware: "quantum-gpu"
+  containers:
+    - name: waiting
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 6 — OOMKilled
+# Alloue davantage que sa limite mémoire. Le noyau tue le conteneur, qui
+# redémarre puis se fait tuer à nouveau. Cas particulièrement intéressant : le
+# pod alterne entre Running et CrashLoopBackOff, ce qui met à l'épreuve la
+# stabilité de la détection dans le temps.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-oomkilled
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: oom-killed
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  restartPolicy: Always
+  containers:
+    - name: memory-hog
+      image: busybox:1.36
+      # dd alloue en mémoire via tmpfs jusqu'au dépassement de la limite
+      command: ["sh", "-c", "dd if=/dev/zero of=/dev/shm/fill bs=1M count=200; sleep 60"]
+      resources:
+        requests: { memory: "32Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 7 — Terminaison en échec (Failed)
+# restartPolicy Never : le pod passe définitivement en Failed sans redémarrer.
+# Le compteur de redémarrages reste à zéro — second cas invisible pour une
+# règle centrée sur les redémarrages.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-failed
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: failed-terminal
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  restartPolicy: Never
+  containers:
+    - name: exits-with-error
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'échec définitif'; exit 42"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# ANOMALIE 8 — Sonde de vivacité défaillante
+# Le conteneur fonctionne, mais la sonde de vivacité échoue systématiquement.
+# Kubernetes le redémarre en boucle. Le pod paraît sain de l'extérieur : seule
+# l'observation des redémarrages le trahit.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-liveness-fail
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: anomaly
+    aikube.bench/type: liveness-probe-failure
+    aikube.bench/detectable-by: rules-v1-v2-ml
+spec:
+  restartPolicy: Always
+  containers:
+    - name: unhealthy
+      image: busybox:1.36
+      command: ["sleep", "3600"]
+      livenessProbe:
+        exec:
+          command: ["sh", "-c", "exit 1"]
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 1
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "32Mi", cpu: "50m" }
+
+---
+# ═════════════════════════════════════════════════════════════════════════════
+# CAS SAINS — mesure des faux positifs
+# ═════════════════════════════════════════════════════════════════════════════
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# SAIN 1 — Service nominal
+# Référence positive simple : doit rester Running sans redémarrage.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-healthy-nginx
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: nominal-service
+    app: bench-nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests: { memory: "32Mi", cpu: "20m" }
+        limits:   { memory: "128Mi", cpu: "200m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# SAIN 2 — Tâche de fond
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-healthy-worker
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: nominal-worker
+spec:
+  containers:
+    - name: worker
+      image: busybox:1.36
+      command: ["sh", "-c", "while true; do echo travail; sleep 30; done"]
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# SAIN 3 — PIÈGE : démarrage lent
+# Met 90 secondes à devenir prêt, avec une sonde tolérante. Un détecteur
+# impatient le classera à tort en anomalie pendant la fenêtre de démarrage.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-healthy-slowstart
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: slow-start-trap
+spec:
+  containers:
+    - name: slow
+      image: busybox:1.36
+      command: ["sh", "-c", "sleep 90; while true; do sleep 30; done"]
+      readinessProbe:
+        exec:
+          command: ["sh", "-c", "test -f /tmp/never || true"]
+        initialDelaySeconds: 100
+        periodSeconds: 20
+        failureThreshold: 10
+      resources:
+        requests: { memory: "16Mi", cpu: "10m" }
+        limits:   { memory: "64Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# SAIN 4 — PIÈGE : consommation mémoire élevée mais maîtrisée
+# Consomme 80 % de sa limite sans jamais la dépasser. Un détecteur fondé sur
+# un seuil d'utilisation absolu le signalera à tort.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bench-healthy-highmem
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+    aikube.bench/type: high-usage-trap
+spec:
+  containers:
+    - name: hungry-but-safe
+      image: busybox:1.36
+      command: ["sh", "-c", "dd if=/dev/zero of=/dev/shm/fill bs=1M count=100; while true; do sleep 30; done"]
+      resources:
+        requests: { memory: "64Mi", cpu: "10m" }
+        limits:   { memory: "256Mi", cpu: "100m" }
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# SAIN 5 — Déploiement à deux répliques
+# Vérifie que la détection ne se laisse pas troubler par des pods au nom
+# généré et à la durée de vie courte.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bench-healthy-deploy
+  namespace: aikube-bench
+  labels:
+    aikube.bench/expected: healthy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bench-healthy-deploy
+  template:
+    metadata:
+      labels:
+        app: bench-healthy-deploy
+        aikube.bench/expected: healthy
+        aikube.bench/type: nominal-replicated
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.25-alpine
+          resources:
+            requests: { memory: "32Mi", cpu: "20m" }
+            limits:   { memory: "128Mi", cpu: "200m" }

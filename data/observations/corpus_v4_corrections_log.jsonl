@@ -1,0 +1,231 @@
+{"id": "v4corr-v3-42-0445", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 8366}
+{"id": "v4corr-v3-42-0223", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5572}
+{"id": "v4corr-v4cap-43-0178", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 3932}
+{"id": "v4corr-v3-42-0463", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3944}
+{"id": "v4corr-v3-42-0036", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4635}
+{"id": "v4corr-v3-42-0092", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4417}
+{"id": "v4corr-v4cap-43-0127", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4227}
+{"id": "v4corr-v3-42-0284", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 6289}
+{"id": "v4corr-v4cap-43-0016", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 6048}
+{"id": "v4corr-v3-42-0281", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5283}
+{"id": "v4corr-v4cap-43-0048", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5186}
+{"id": "v4corr-v3-42-0027", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5718}
+{"id": "v4corr-v3-42-0234", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5287}
+{"id": "v4corr-v3-42-0277", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4422}
+{"id": "v4corr-v4cap-43-0057", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4819}
+{"id": "v4corr-v4cap-43-0047", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4913}
+{"id": "v4corr-v3-42-0044", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5569}
+{"id": "v4corr-v4cap-43-0200", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4234}
+{"id": "v4corr-v3-42-0237", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4374}
+{"id": "v4corr-v3-42-0299", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5550}
+{"id": "v4corr-v4cap-43-0107", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5691}
+{"id": "v4corr-v3-42-0294", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 5293}
+{"id": "v4corr-v4cap-43-0018", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4177}
+{"id": "v4corr-v4cap-43-0021", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4681}
+{"id": "v4corr-v3-42-0272", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5728}
+{"id": "v4corr-v4cap-43-0182", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5075}
+{"id": "v4corr-v3-42-0301", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4753}
+{"id": "v4corr-v3-42-0253", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5166}
+{"id": "v4corr-v4cap-43-0124", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4740}
+{"id": "v4corr-v3-42-0400", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4603}
+{"id": "v4corr-v4cap-43-0176", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 3892}
+{"id": "v4corr-v4cap-43-0185", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4408}
+{"id": "v4corr-v4cap-43-0199", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5034}
+{"id": "v4corr-v3-42-0150", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3213}
+{"id": "v4corr-v4cap-43-0082", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4575}
+{"id": "v4corr-v4cap-43-0032", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4890}
+{"id": "v4corr-v3-42-0333", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4918}
+{"id": "v4corr-v3-42-0041", "mutation": "champ", "errors": ["champ inconnu"], "chars": 6322}
+{"id": "v4corr-v3-42-0316", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 6289}
+{"id": "v4corr-v3-42-0115", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4508}
+{"id": "v4corr-v4cap-43-0125", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4551}
+{"id": "v4corr-v3-42-0026", "mutation": "namespace", "errors": ["namespace absent"], "chars": 5221}
+{"id": "v4corr-v3-42-0166", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5843}
+{"id": "v4corr-v4cap-43-0228", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4631}
+{"id": "v4corr-v3-42-0480", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4463}
+{"id": "v4corr-v3-42-0235", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4049}
+{"id": "v4corr-v4cap-43-0024", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5646}
+{"id": "v4corr-v3-42-0192", "mutation": "namespace", "errors": ["namespace absent"], "chars": 6342}
+{"id": "v4corr-v3-42-0132", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4062}
+{"id": "v4corr-v3-42-0016", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3239}
+{"id": "v4corr-v4cap-43-0237", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5627}
+{"id": "v4corr-v4cap-43-0144", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5176}
+{"id": "v4corr-v3-42-0210", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5544}
+{"id": "v4corr-v3-42-0467", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3653}
+{"id": "v4corr-v3-42-0018", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5311}
+{"id": "v4corr-v3-42-0032", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5309}
+{"id": "v4corr-v4cap-43-0166", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4428}
+{"id": "v4corr-v3-42-0327", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4011}
+{"id": "v4corr-v4cap-43-0136", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4316}
+{"id": "v4corr-v4cap-43-0208", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5189}
+{"id": "v4corr-v3-42-0096", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5889}
+{"id": "v4corr-v4cap-43-0196", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5154}
+{"id": "v4corr-v3-42-0494", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4718}
+{"id": "v4corr-v3-42-0147", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5467}
+{"id": "v4corr-v4cap-43-0049", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 6022}
+{"id": "v4corr-v4cap-43-0130", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4791}
+{"id": "v4corr-v3-42-0365", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5316}
+{"id": "v4corr-v3-42-0439", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5103}
+{"id": "v4corr-v3-42-0490", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4900}
+{"id": "v4corr-v3-42-0006", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4906}
+{"id": "v4corr-v3-42-0199", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5466}
+{"id": "v4corr-v3-42-0206", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5497}
+{"id": "v4corr-v3-42-0430", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4742}
+{"id": "v4corr-v3-42-0148", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5028}
+{"id": "v4corr-v3-42-0100", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5300}
+{"id": "v4corr-v3-42-0422", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 5250}
+{"id": "v4corr-v3-42-0179", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5440}
+{"id": "v4corr-v3-42-0124", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5098}
+{"id": "v4corr-v3-42-0324", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 5620}
+{"id": "v4corr-v3-42-0331", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5344}
+{"id": "v4corr-v3-42-0475", "mutation": "champ", "errors": ["champ inconnu"], "chars": 6300}
+{"id": "v4corr-v3-42-0493", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5690}
+{"id": "v4corr-v4cap-43-0164", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4365}
+{"id": "v4corr-v3-42-0252", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5532}
+{"id": "v4corr-v3-42-0091", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5031}
+{"id": "v4corr-v3-42-0268", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5484}
+{"id": "v4corr-v3-42-0364", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3548}
+{"id": "v4corr-v3-42-0126", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4424}
+{"id": "v4corr-v3-42-0176", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3706}
+{"id": "v4corr-v3-42-0117", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4062}
+{"id": "v4corr-v4cap-43-0150", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 3920}
+{"id": "v4corr-v3-42-0191", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5265}
+{"id": "v4corr-v4cap-43-0089", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4870}
+{"id": "v4corr-v4cap-43-0113", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4628}
+{"id": "v4corr-v3-42-0109", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4560}
+{"id": "v4corr-v3-42-0310", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5310}
+{"id": "v4corr-v3-42-0185", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4884}
+{"id": "v4corr-v3-42-0348", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 6229}
+{"id": "v4corr-v3-42-0276", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5115}
+{"id": "v4corr-v3-42-0393", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 6538}
+{"id": "v4corr-v4cap-43-0003", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4805}
+{"id": "v4corr-v4cap-43-0244", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 3813}
+{"id": "v4corr-v3-42-0385", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5416}
+{"id": "v4corr-v3-42-0347", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3450}
+{"id": "v4corr-v3-42-0195", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 4859}
+{"id": "v4corr-v4cap-43-0040", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4329}
+{"id": "v4corr-v3-42-0160", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4743}
+{"id": "v4corr-v4cap-43-0062", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5094}
+{"id": "v4corr-v3-42-0021", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4747}
+{"id": "v4corr-v4cap-43-0240", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5325}
+{"id": "v4corr-v3-42-0111", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4857}
+{"id": "v4corr-v3-42-0257", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5399}
+{"id": "v4corr-v3-42-0250", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4975}
+{"id": "v4corr-v4cap-43-0209", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5045}
+{"id": "v4corr-v4cap-43-0135", "mutation": "namespace", "errors": ["namespace absent"], "chars": 5542}
+{"id": "v4corr-v3-42-0082", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4680}
+{"id": "v4corr-v3-42-0453", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4247}
+{"id": "v4corr-v4cap-43-0234", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4725}
+{"id": "v4corr-v3-42-0005", "mutation": "champ", "errors": ["champ inconnu"], "chars": 7567}
+{"id": "v4corr-v4cap-43-0195", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5558}
+{"id": "v4corr-v3-42-0424", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 6562}
+{"id": "v4corr-v3-42-0345", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5884}
+{"id": "v4corr-v3-42-0038", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4933}
+{"id": "v4corr-v3-42-0158", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5580}
+{"id": "v4corr-v4cap-43-0190", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4798}
+{"id": "v4corr-v3-42-0001", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4398}
+{"id": "v4corr-v4cap-43-0072", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4469}
+{"id": "v4corr-v4cap-43-0073", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5462}
+{"id": "v4corr-v3-42-0220", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4960}
+{"id": "v4corr-v4cap-43-0013", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4915}
+{"id": "v4corr-v3-42-0451", "mutation": "champ", "errors": ["champ inconnu"], "chars": 3833}
+{"id": "v4corr-v3-42-0455", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5133}
+{"id": "v4corr-v3-42-0087", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5876}
+{"id": "v4corr-v3-42-0159", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4609}
+{"id": "v4corr-v4cap-43-0044", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 7227}
+{"id": "v4corr-v3-42-0459", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4067}
+{"id": "v4corr-v3-42-0190", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4781}
+{"id": "v4corr-v3-42-0259", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4558}
+{"id": "v4corr-v4cap-43-0035", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4630}
+{"id": "v4corr-v3-42-0306", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3428}
+{"id": "v4corr-v4cap-43-0111", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4910}
+{"id": "v4corr-v4cap-43-0198", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5166}
+{"id": "v4corr-v4cap-43-0194", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5151}
+{"id": "v4corr-v3-42-0232", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4075}
+{"id": "v4corr-v4cap-43-0087", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4781}
+{"id": "v4corr-v3-42-0380", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 5496}
+{"id": "v4corr-v4cap-43-0156", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5838}
+{"id": "v4corr-v3-42-0297", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4694}
+{"id": "v4corr-v3-42-0426", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4991}
+{"id": "v4corr-v4cap-43-0104", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4549}
+{"id": "v4corr-v3-42-0077", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 6145}
+{"id": "v4corr-v3-42-0203", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5225}
+{"id": "v4corr-v3-42-0155", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4231}
+{"id": "v4corr-v3-42-0376", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4512}
+{"id": "v4corr-v3-42-0193", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4510}
+{"id": "v4corr-v3-42-0360", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 6254}
+{"id": "v4corr-v4cap-43-0177", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4811}
+{"id": "v4corr-v4cap-43-0038", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4937}
+{"id": "v4corr-v3-42-0343", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 3668}
+{"id": "v4corr-v4cap-43-0169", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4565}
+{"id": "v4corr-v4cap-43-0184", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4266}
+{"id": "v4corr-v3-42-0291", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4974}
+{"id": "v4corr-v3-42-0020", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4400}
+{"id": "v4corr-v3-42-0211", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4136}
+{"id": "v4corr-v4cap-43-0096", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 6291}
+{"id": "v4corr-v3-42-0013", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 6689}
+{"id": "v4corr-v3-42-0399", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 5621}
+{"id": "v4corr-v4cap-43-0248", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5505}
+{"id": "v4corr-v3-42-0037", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 3925}
+{"id": "v4corr-v3-42-0164", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5070}
+{"id": "v4corr-v4cap-43-0101", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4195}
+{"id": "v4corr-v4cap-43-0075", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 6871}
+{"id": "v4corr-v3-42-0444", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3975}
+{"id": "v4corr-v4cap-43-0083", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4197}
+{"id": "v4corr-v3-42-0472", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 3619}
+{"id": "v4corr-v3-42-0226", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5255}
+{"id": "v4corr-v4cap-43-0105", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5489}
+{"id": "v4corr-v4cap-43-0143", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 3859}
+{"id": "v4corr-v4cap-43-0157", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4719}
+{"id": "v4corr-v4cap-43-0149", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4657}
+{"id": "v4corr-v3-42-0112", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5755}
+{"id": "v4corr-v3-42-0350", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4002}
+{"id": "v4corr-v4cap-43-0161", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 4623}
+{"id": "v4corr-v4cap-43-0029", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5123}
+{"id": "v4corr-v4cap-43-0009", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5842}
+{"id": "v4corr-v4cap-43-0139", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4063}
+{"id": "v4corr-v3-42-0123", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5353}
+{"id": "v4corr-v3-42-0133", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5205}
+{"id": "v4corr-v3-42-0498", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5385}
+{"id": "v4corr-v3-42-0245", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5625}
+{"id": "v4corr-v3-42-0349", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 4408}
+{"id": "v4corr-v4cap-43-0123", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4912}
+{"id": "v4corr-v4cap-43-0060", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 4513}
+{"id": "v4corr-v3-42-0003", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5284}
+{"id": "v4corr-v4cap-43-0153", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 3841}
+{"id": "v4corr-v4cap-43-0191", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 5243}
+{"id": "v4corr-v4cap-43-0092", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5543}
+{"id": "v4corr-v3-42-0449", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4095}
+{"id": "v4corr-v4cap-43-0007", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4608}
+{"id": "v4corr-v3-42-0389", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5301}
+{"id": "v4corr-v4cap-43-0045", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5166}
+{"id": "v4corr-v4cap-43-0214", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5132}
+{"id": "v4corr-v3-42-0468", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4799}
+{"id": "v4corr-v3-42-0477", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4736}
+{"id": "v4corr-v3-42-0419", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 5009}
+{"id": "v4corr-v3-42-0196", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5591}
+{"id": "v4corr-v3-42-0279", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 6760}
+{"id": "v4corr-v3-42-0080", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3034}
+{"id": "v4corr-v3-42-0162", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5343}
+{"id": "v4corr-v3-42-0421", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5308}
+{"id": "v4corr-v3-42-0053", "mutation": "api", "errors": ["groupe d'API incorrect"], "chars": 5321}
+{"id": "v4corr-v3-42-0048", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4186}
+{"id": "v4corr-v4cap-43-0216", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5023}
+{"id": "v4corr-v4cap-43-0172", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4834}
+{"id": "v4corr-v3-42-0489", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5992}
+{"id": "v4corr-v3-42-0030", "mutation": "namespace", "errors": ["namespace absent"], "chars": 3481}
+{"id": "v4corr-v3-42-0492", "mutation": "champ", "errors": ["champ inconnu"], "chars": 4760}
+{"id": "v4corr-v3-42-0395", "mutation": "namespace", "errors": ["namespace absent"], "chars": 6331}
+{"id": "v4corr-v3-42-0011", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte", "ne tient sur aucun nœud"], "chars": 5844}
+{"id": "v4corr-v3-42-0035", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 5274}
+{"id": "v4corr-v3-42-0161", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4370}
+{"id": "v4corr-v4cap-43-0226", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4694}
+{"id": "v4corr-v3-42-0292", "mutation": "capacite", "errors": ["dépasse la capacité du cluster"], "chars": 5950}
+{"id": "v4corr-v4cap-43-0231", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4636}
+{"id": "v4corr-v4cap-43-0076", "mutation": "capacite", "errors": ["dépasse la RAM physique de l'hôte"], "chars": 4636}
+{"id": "v4corr-v3-42-0344", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 5240}
+{"id": "v4corr-v3-42-0088", "mutation": "namespace", "errors": ["namespace absent"], "chars": 4052}
+{"id": "v4corr-v3-42-0486", "mutation": "champ", "errors": ["champ inconnu"], "chars": 5574}
+{"id": "v4corr-v3-42-0371", "mutation": "capacite", "errors": ["ne tient sur aucun nœud"], "chars": 7769}
+{"id": "v4corr-v3-42-0305", "mutation": "ressources", "errors": ["requests/limits manquants"], "chars": 4415}
+{"id": "v4corr-v4cap-43-0134", "mutation": "capacite", "errors": ["dépasse la capacité du cluster", "ne tient sur aucun nœud"], "chars": 4751}

@@ -1,0 +1,168 @@
+# ==============================================================================
+# AI-Kube — Charge « vie normale » pour mesurer les FAUSSES ALERTES du prédicteur
+# mémoire (chapitre 8, mesure complémentaire du 29/10/2026)
+# ==============================================================================
+# Question : sur un cluster qui vit normalement, combien d'alertes « crash
+# mémoire annoncé » ne sont suivies d'AUCUN crash ?
+#
+# Vérité terrain, connue d'avance :
+#   · aikube.fa/expect=no-oom  -> ne doit JAMAIS atteindre sa limite :
+#                                 toute alerte sur ces pods est une FAUSSE alerte ;
+#   · aikube.fa/expect=oom     -> témoin positif : fuit lentement, crash environ
+#                                 toutes les 40 min ; il doit être annoncé à chaque cycle.
+#
+# Comportements « normaux » qui ressemblent à une fuite sans en être une :
+#   web-nginx    stable, la référence calme ;
+#   cache-warm   cache qui se remplit pendant 10 min puis se stabilise (1 h),
+#                vidé puis rempli de nouveau : le piège le plus réaliste ;
+#   gc-noisy     mémoire qui monte et descend au hasard toutes les 20 s ;
+#   batch-report tâche planifiée toutes les 15 min, qui monte puis se termine.
+#
+# Images déjà présentes sur le cluster (python:3.12-alpine, nginx:1.27).
+#
+# USAGE (terminal Ubuntu WSL, dans ~/aikube)
+#   kubectl apply -f k8s/benchmark/false-alarm-workload.yaml
+#   python3 scripts/watch_false_alarms.py --hours 10
+#   python3 scripts/watch_false_alarms.py --report
+#   kubectl delete namespace aikube-fa
+# ==============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aikube-fa
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-nginx
+  namespace: aikube-fa
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: web-nginx}}
+  template:
+    metadata: {labels: {app: web-nginx, aikube.fa/expect: no-oom}}
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27
+          resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache-warm
+  namespace: aikube-fa
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: cache-warm}}
+  template:
+    metadata: {labels: {app: cache-warm, aikube.fa/expect: no-oom}}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command:
+            - python
+            - -u
+            - -c
+            - |
+              import time
+              MIB = 1024 * 1024
+              while True:
+                  cache = []
+                  for _ in range(80):                 # 80 Mio en 10 min (8 Mio/min)
+                      cache.append(b"\x01" * MIB)
+                      time.sleep(7.5)
+                  print("cache plein, plateau d'une heure", flush=True)
+                  time.sleep(3600)
+                  cache = None                        # vidage, puis nouveau remplissage
+          resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 160Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gc-noisy
+  namespace: aikube-fa
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: gc-noisy}}
+  template:
+    metadata: {labels: {app: gc-noisy, aikube.fa/expect: no-oom}}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command:
+            - python
+            - -u
+            - -c
+            - |
+              import random, time
+              MIB = 1024 * 1024
+              base = [b"\x01" * MIB for _ in range(30)]   # socle de 30 Mio
+              while True:
+                  tmp = [b"\x01" * MIB for _ in range(random.randint(0, 60))]
+                  time.sleep(20)
+                  del tmp                                  # rendu au système
+          resources: {requests: {cpu: 10m, memory: 48Mi}, limits: {memory: 160Mi}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: batch-report
+  namespace: aikube-fa
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata: {labels: {app: batch-report, aikube.fa/expect: no-oom}}
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: job
+              image: python:3.12-alpine
+              command:
+                - python
+                - -u
+                - -c
+                - |
+                  import time
+                  MIB = 1024 * 1024
+                  data = []
+                  for _ in range(25):                 # 50 Mio en ~2 min, puis fin
+                      data.append(b"\x01" * (2 * MIB))
+                      time.sleep(5)
+                  print("rapport terminé", flush=True)
+              resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 96Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leak-control
+  namespace: aikube-fa
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: leak-control}}
+  template:
+    metadata: {labels: {app: leak-control, aikube.fa/expect: oom}}
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command:
+            - python
+            - -u
+            - -c
+            - |
+              import time
+              MIB = 1024 * 1024
+              leak = []
+              while True:                           # 3 Mio/min : crash vers 40 min
+                  leak.append(b"\x01" * MIB)
+                  time.sleep(20)
+          resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {memory: 128Mi}}

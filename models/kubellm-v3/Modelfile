@@ -1,0 +1,16 @@
+# KubeLLM v3 — Qwen2.5-Coder-1.5B + LoRA (corpus v3 + capacité + corrections), quantifié Q4_K_M
+# Installation : ollama create kubellm-v3 -f Modelfile
+FROM ./kubellm-v3.Q4_K_M.gguf
+
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ if .Prompt }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{ end }}<|im_start|>assistant
+{{ .Response }}<|im_end|>
+"""
+
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
+PARAMETER temperature 0.2
+PARAMETER num_ctx 4096
