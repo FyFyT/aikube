@@ -16,6 +16,12 @@ CONDITIONS
   kubellm-v3-repair  le même + réparation déterministe avant chaque nouvel essai
                  (manifest_repair : version d'API, champs mal placés, noms, capacité…)
   groq-repair    l'enseignant + la même réparation (généralité de la réparation)
+  groq-noctx     ABLATION sur un 2e modèle (gpt-oss-120b) : SANS le contexte hôte/cluster
+  kubellm-v4-noctx  ABLATION sur le modèle local (facultatif, lent)
+
+DEMANDES D'UN TIERS (test indépendant)
+  --prompts k8s/benchmark/tiers/demandes_tiers.json   remplace les 36 demandes par celles
+  écrites par un tiers ; résultats rangés à part (campaign_yaml_tiers.jsonl).
 
 MÉTRIQUES (calculées par campaign_report.py)
   pass@1    manifeste valide dès la 1re tentative
@@ -98,7 +104,28 @@ CONDITIONS = {
     "kubellm-v4":   {"model": "kubellm-v4", "use_context": True},
     "kubellm-v4-repair": {"model": "kubellm-v4", "use_context": True, "repair": True},
     "groq-repair":  {"model": "groq", "use_context": True, "repair": True},
+    # Retour de l'encadreur : l'ancrage testé sur au moins deux modèles (H1)
+    "groq-noctx":   {"model": "groq", "use_context": False},
+    "kubellm-v4-noctx": {"model": "kubellm-v4", "use_context": False},
 }
+
+
+def load_prompts(path):
+    """Demandes écrites par un tiers (JSON) au même format que PROMPTS."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    items = data["demandes"] if isinstance(data, dict) else data
+    out, seen = [], set()
+    for d in items:
+        pid = str(d["id"]).strip()
+        if pid in seen:
+            sys.exit(f"Identifiant en double dans {path} : {pid}")
+        seen.add(pid)
+        out.append((pid, d.get("categorie", "tiers"), d["demande"],
+                    list(d.get("types_attendus") or []), bool(d.get("capacite_impossible", False))))
+    if not out:
+        sys.exit(f"Aucune demande dans {path}")
+    return out
 
 
 def post(api, path, body, timeout=420):   # modèles locaux sur processeur : --timeout 1800
@@ -138,6 +165,7 @@ def main():
     ap.add_argument("--max-attempts", type=int, default=3)
     ap.add_argument("--pause", type=int, default=5, help="secondes entre deux générations")
     ap.add_argument("--timeout", type=int, default=420, help="délai max d'une génération (s) ; 1800 pour un modèle local")
+    ap.add_argument("--prompts", default="", help="fichier JSON de demandes écrites par un tiers")
     ap.add_argument("--out", default="", help="fichier de résultats (défaut : data/observations/campaign_yaml.jsonl) ; "
                     "un nom de fichier seul est rangé dans data/observations/. Sert à ne jamais mélanger une "
                     "nouvelle série (ex. modèle réentraîné) avec le journal mesuré du mémoire.")
@@ -156,7 +184,10 @@ def main():
             print(f"⚠ condition {c} ignorée : clé {CONDITIONS[c]['model']} absente")
             conds.remove(c)
     cats = {x.strip() for x in a.only.split(",") if x.strip()}
-    prompts = [p for p in PROMPTS if not cats or p[1] in cats]
+    source = load_prompts(a.prompts) if a.prompts else PROMPTS
+    if a.prompts and not a.out:
+        a.out = "campaign_yaml_tiers.jsonl"
+    prompts = [p for p in source if not cats or p[1] in cats]
     prompts = prompts[: a.limit] if a.limit else prompts
     out = a.out or OUT
     if a.out and not os.path.isabs(a.out) and os.sep not in a.out:

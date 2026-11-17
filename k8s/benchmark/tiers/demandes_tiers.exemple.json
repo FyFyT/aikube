@@ -1,0 +1,8 @@
+{
+  "demandes": [
+    {"id": "t01", "categorie": "workload", "demande": "Déployer WordPress avec 2 replicas et un Service sur le port 80",
+     "types_attendus": ["Deployment", "Service"], "capacite_impossible": false},
+    {"id": "t02", "categorie": "capacite", "demande": "Base MySQL avec 40Gi de RAM",
+     "types_attendus": ["Deployment"], "capacite_impossible": true}
+  ]
+}

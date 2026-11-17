@@ -15,6 +15,11 @@ Fiche de relecture des réponses de l'agent (section 6.1.2 du mémoire).
     python3 scripts/fiche_relecture.py --appliquer data/observations/relecture_auteur.csv
   → met à jour campaign_agent_manual.csv (copie de l'ancien fichier conservée),
     puis : python3 scripts/campaign_report.py   pour recalculer les résultats.
+
+Nouvelles réponses (répétition 3, témoin fort, banc du tiers) :
+    python3 scripts/fiche_relecture.py --completer
+  → ajoute à campaign_agent_manual.csv les réponses pas encore notées, avec une
+    note proposée (notation stricte automatique), puis refaire l'étape 1.
 """
 import argparse
 import csv
@@ -26,15 +31,52 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from campaign_agent import BENCHES, CASES, EVIDENCE, OBS  # noqa: E402
+from campaign_agent import (BENCHES, EVIDENCE, OBS, all_cases, is_abstention,  # noqa: E402
+                            score_strict)
 
 JOURNAL = os.path.join(OBS, "campaign_agent.jsonl")
 MANUEL = os.path.join(OBS, "campaign_agent_manual.csv")
 SORTIE = os.path.join(OBS, "fiche_relecture.html")
 
-CAUSE = {c[0]: c[2] for c in CASES}
+CAUSE = {c[0]: c[2] for c in all_cases()}
 NOTE_TXT = {"1": "Cause exacte (1)", "0.5": "Partielle (0,5)", "0": "Fausse (0)", "A": "Abstention (0)"}
-CONDITION_TXT = {"agent": "Agent avec outils", "chat-claude": "Même modèle sans outils"}
+CONDITION_TXT = {"agent": "Agent avec outils", "chat-claude": "Même modèle sans outils",
+                 "chat-claude-obs": "Même modèle sans outils, avec l'état des pods et les événements",
+                 "chat-groq-obs": "gpt-oss-120b sans outils, avec l'état des pods et les événements"}
+
+
+def completer():
+    """Ajoute au fichier manuel les réponses des bancs v2 et tiers pas encore notées."""
+    journal = lire_journal()
+    with open(MANUEL, encoding="utf-8", newline="") as f:
+        lignes = list(csv.DictReader(f))
+        champs = list(lignes[0].keys())
+    deja = {cle(r["banc"], r["cas"], r["condition"], r["rep"]) for r in lignes}
+    ajout = []
+    for k, d in sorted(journal.items()):
+        banc = d.get("bench", "v1")
+        if banc == "v1" or k in deja:
+            continue
+        if is_abstention(d["response"]):
+            note, why = "A", "Proposition automatique : la réponse refuse de conclure."
+        else:
+            v = score_strict(d["case"], d["response"], d["auto_score"])
+            note = {1.0: "1", 0.5: "0.5", 0.0: "0"}[v]
+            why = "Proposition automatique (notation stricte), à confirmer."
+        r = {c: "" for c in champs}
+        r.update(banc=banc, cas=d["case"], condition=d["condition"], rep=str(d["rep"]), note=note, justification=why)
+        if "relu_par" in r:
+            r["relu_par"] = ""
+        ajout.append(r)
+    if not ajout:
+        print("Aucune nouvelle réponse à ajouter.")
+        return
+    shutil.copy(MANUEL, MANUEL.replace(".csv", f".avant_completer_{time.strftime('%Y%m%d_%H%M')}.csv"))
+    with open(MANUEL, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=champs)
+        w.writeheader()
+        w.writerows(lignes + ajout)
+    print(f"{len(ajout)} réponse(s) ajoutée(s) à {MANUEL} (note proposée, à confirmer avec la fiche).")
 
 
 def cle(banc, cas, cond, rep):
@@ -194,5 +236,11 @@ maj();
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--appliquer", metavar="CSV", help="fichier relecture_auteur.csv téléchargé depuis la fiche")
+    ap.add_argument("--completer", action="store_true", help="ajouter les nouvelles réponses à noter")
     a = ap.parse_args()
-    appliquer(a.appliquer) if a.appliquer else fabriquer()
+    if a.completer:
+        completer()
+    elif a.appliquer:
+        appliquer(a.appliquer)
+    else:
+        fabriquer()

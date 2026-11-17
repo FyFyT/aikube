@@ -1,0 +1,20 @@
+{
+  "namespace": "aikube-tiers",
+  "manifeste": "k8s/benchmark/tiers/cas-tiers.yaml",
+  "cas": [
+    {
+      "id": "t01",
+      "cible": "le déploiement app-01",
+      "cause": "commande du conteneur mal écrite (sleepp au lieu de sleep), le conteneur s'arrête aussitôt",
+      "mots_cles": [["sleepp", "commande", "command"], ["crashloop", "redemarr", "exit", "introuvable", "not found"]],
+      "preuve": ["sleepp"]
+    },
+    {
+      "id": "t02",
+      "cible": "le déploiement app-02",
+      "cause": "aucune panne (témoin)",
+      "mots_cles": null,
+      "preuve": null
+    }
+  ]
+}

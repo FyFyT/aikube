@@ -82,9 +82,9 @@ def tokens(usages):
 
 # ── C1 ───────────────────────────────────────────────────────────────────────
 
-def report_c1(out):
-    rows = [r for r in load("campaign_yaml.jsonl") if r.get("status") == "ok"]
-    out.append("## C1 — Générateur de manifestes\n")
+def report_c1(out, fname="campaign_yaml.jsonl", title="C1 — Générateur de manifestes"):
+    rows = [r for r in load(fname) if r.get("status") == "ok"]
+    out.append(f"## {title}\n")
     if not rows:
         out.append("_Aucune mesure (scripts/campaign_yaml.py)._\n")
         return
@@ -206,12 +206,15 @@ def report_c1(out):
         out.append(f"| {c} | " + (", ".join(f"{k} ({v})" for k, v in cnt.most_common()) or "aucune") + " |")
     out.append("")
 
-    # Ablation appariée
-    if {"claude", "claude-noctx"} <= set(conds):
-        a = {(r["prompt_id"], r["rep"]): r for r in rows if r["condition"] == "claude"}
-        b = {(r["prompt_id"], r["rep"]): r for r in rows if r["condition"] == "claude-noctx"}
+    # Ablation appariée, pour chaque modèle mesuré avec et sans contexte (H1 sur plusieurs modèles)
+    for base in ("claude", "groq", "kubellm-v4"):
+        if not {base, base + "-noctx"} <= set(conds):
+            continue
+        a = {(r["prompt_id"], r["rep"]): r for r in rows if r["condition"] == base}
+        b = {(r["prompt_id"], r["rep"]): r for r in rows if r["condition"] == base + "-noctx"}
         keys = sorted(set(a) & set(b))
-        out.append("### Ablation : effet de la lecture de la machine hôte (même modèle, mêmes demandes)\n")
+        out.append(f"### Ablation : effet de la lecture de la machine hôte — {base} (même modèle, mêmes demandes, "
+                   f"toutes répétitions appariées)\n")
         for label, fld, sub in (("pass@1, toutes demandes", "valid_first", None),
                                 ("pass@1, demandes de capacité", "valid_first", True),
                                 ("pass@3, toutes demandes", "valid", None)):
@@ -331,13 +334,14 @@ def report_c2(out):
         br = [r for r in rows if r["bench"] == bench]
         conds = sorted({r["condition"] for r in br})
         n_manual = sum(r["manual"] for r in br)
+        healthy_ids = {r["case"] for r in br if r.get("truth", "").startswith("aucune panne")} | {"healthy"}
         out.append(f"### Banc {bench} ({n_manual}/{len(br)} notes relues à la main)\n")
         out.append("| Condition | Cause exacte (mots-clés) | Cause exacte (stricte) | Partielle | Fausse | "
                    "Abstention | Témoin sain correct | Outils / question (méd.) | Durée méd. |")
         out.append("|---|---|---|---|---|---|---|---|---|")
         for c in conds:
-            f = [r for r in br if r["condition"] == c and r["case"] != "healthy"]
-            h = [r for r in br if r["condition"] == c and r["case"] == "healthy"]
+            f = [r for r in br if r["condition"] == c and r["case"] not in healthy_ids]
+            h = [r for r in br if r["condition"] == c and r["case"] in healthy_ids]
             out.append(f"| {c} | {rate(sum(r['kw'] == 1 for r in f), len(f))} | "
                        f"{rate(sum(r['strict'] == 1 for r in f), len(f))} | "
                        f"{sum(r['strict'] == 0.5 for r in f)} | "
@@ -360,15 +364,18 @@ def report_c2(out):
                                       for r in rs) or "—")
             out.append(f"| {cid} | {truth} | " + " | ".join(cells) + " |")
         out.append("")
-        if {"agent", "chat-claude"} <= set(conds):
-            a = {(r["case"], r["rep"]): r for r in br if r["condition"] == "agent" and r["case"] != "healthy"}
-            b = {(r["case"], r["rep"]): r for r in br if r["condition"] == "chat-claude" and r["case"] != "healthy"}
+        for x, y in (("agent", "chat-claude"), ("agent", "chat-claude-obs"), ("chat-claude-obs", "chat-claude"),
+                     ("agent", "chat-groq-obs")):
+            if not {x, y} <= set(conds):
+                continue
+            a = {(r["case"], r["rep"]): r for r in br if r["condition"] == x and r["case"] not in healthy_ids}
+            b = {(r["case"], r["rep"]): r for r in br if r["condition"] == y and r["case"] not in healthy_ids}
             ks = sorted(set(a) & set(b))
             for label, fld in (("mots-clés", "kw"), ("stricte", "strict")):
                 oa = sum(1 for k in ks if a[k][fld] == 1 and b[k][fld] != 1)
                 ob = sum(1 for k in ks if b[k][fld] == 1 and a[k][fld] != 1)
-                out.append(f"- Agent / chat-claude, notation {label}, {len(ks)} pannes : cause exacte "
-                           f"trouvée par l'agent seul : {oa}, par le chat seul : {ob} ; "
+                out.append(f"- {x} / {y}, notation {label}, {len(ks)} pannes appariées : cause exacte "
+                           f"trouvée par {x} seul : {oa}, par {y} seul : {ob} ; "
                            f"McNemar exact p = {fmt_p(mcnemar(oa, ob))}")
             out.append("")
 
@@ -430,6 +437,8 @@ def main():
     out = [f"# Rapport des campagnes de mesure — {time.strftime('%Y-%m-%d %H:%M')}\n",
            "_Généré par scripts/campaign_report.py à partir des journaux de data/observations/._\n"]
     report_c1(out)
+    if os.path.exists(os.path.join(OBS, "campaign_yaml_tiers.jsonl")):
+        report_c1(out, "campaign_yaml_tiers.jsonl", "C1 (test indépendant) — Demandes écrites par un tiers")
     report_c2(out)
     report_oom(out)
     text = "\n".join(out)
