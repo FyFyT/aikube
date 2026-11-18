@@ -140,7 +140,22 @@ def get(api, path, timeout=60):
         return json.loads(r.read())
 
 
-def done_keys(out=None):
+def api_ready(tries=10, wait=30):
+    """Attend que le serveur Kubernetes réponde (sinon le dry-run est non concluant)."""
+    import subprocess
+    for i in range(tries):
+        try:
+            r = subprocess.run(["kubectl", "get", "--raw", "/readyz"], capture_output=True, text=True, timeout=30)
+            if r.returncode == 0 and "ok" in r.stdout:
+                return True
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        print(f"   … serveur Kubernetes indisponible, nouvel essai dans {wait} s ({i + 1}/{tries})")
+        time.sleep(wait)
+    return False
+
+
+def done_keys(out=None, redo_inconclusive=False):
     out = out or OUT
     keys = set()
     if os.path.exists(out):
@@ -149,6 +164,9 @@ def done_keys(out=None):
                 try:
                     d = json.loads(line)
                     if d.get("status") == "ok":
+                        if redo_inconclusive and d.get("server_validated") is None:
+                            keys.discard((d["prompt_id"], d["condition"], d["rep"]))
+                            continue
                         keys.add((d["prompt_id"], d["condition"], d["rep"]))
                 except (ValueError, KeyError):
                     pass
@@ -165,6 +183,8 @@ def main():
     ap.add_argument("--max-attempts", type=int, default=3)
     ap.add_argument("--pause", type=int, default=5, help="secondes entre deux générations")
     ap.add_argument("--timeout", type=int, default=420, help="délai max d'une génération (s) ; 1800 pour un modèle local")
+    ap.add_argument("--refaire-inconclus", action="store_true",
+                    help="refaire les mesures ⚪ (serveur Kubernetes injoignable pendant la mesure)")
     ap.add_argument("--prompts", default="", help="fichier JSON de demandes écrites par un tiers")
     ap.add_argument("--out", default="", help="fichier de résultats (défaut : data/observations/campaign_yaml.jsonl) ; "
                     "un nom de fichier seul est rangé dans data/observations/. Sert à ne jamais mélanger une "
@@ -192,7 +212,7 @@ def main():
     out = a.out or OUT
     if a.out and not os.path.isabs(a.out) and os.sep not in a.out:
         out = os.path.join(ROOT, "data", "observations", a.out)
-    already = done_keys(out)
+    already = done_keys(out, a.refaire_inconclus)
     todo = [(p, c, r) for r in range(1, a.reps + 1) for p in prompts for c in conds
             if (p[0], c, r) not in already]
     print(f"Campagne C1 : {len(prompts)} demandes × {len(conds)} conditions × {a.reps} rép. "
@@ -202,6 +222,8 @@ def main():
 
     for i, ((pid, cat, text, kinds, impossible), cond, rep) in enumerate(todo, 1):
         cfg = CONDITIONS[cond]
+        if not api_ready():
+            sys.exit("Serveur Kubernetes toujours indisponible : campagne arrêtée (relancer plus tard, rien n'est perdu).")
         t0 = time.time()
         rec = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "prompt_id": pid, "category": cat,
                "prompt": text, "expected_kinds": kinds, "capacity_stress": impossible,
@@ -231,6 +253,8 @@ def main():
                                                else [e["category"] for e in (atts[0]["errors"] if atts else [])]),
                            repair_changes=[(x or {}).get("changes", []) for x in reps],
                            yaml_model_first=((atts[0].get("yaml_model") or "")[:6000] if atts else ""))
+            if r.get("server_validated") is None:
+                rec["status"] = "inconclus"      # refaite au prochain lancement
             mark = "✅" if r.get("valid") else ("⚪" if r.get("server_validated") is None else "❌")
             if rec.get("repaired_first"):
                 mark += " 🔧"

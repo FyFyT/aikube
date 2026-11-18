@@ -17,7 +17,7 @@ kubectl -n aikube-agent rollout status deployment/agent-image
 Pour une correction durable, changez aussi le tag dans votre manifeste source (GitOps ou YAML). Sinon le prochain `apply` remettra le mauvais tag. Le changement déclenche un nouveau rollout. Le risque est faible, car l'ancien pod n'a jamais été prêt et aucun service n'est interrompu.
 
 **Certitude** — Élevée. L'erreur du registre est explicite et la spec confirme le tag fautif. Vous pouvez vérifier après correction avec `kubectl -n aikube-agent get pods -l app=agent-image`, qui doit afficher `1/1 Running`."
-v1,image,chat-claude,1,tag d'image inexistant,1.0,0.5,,"Je n'ai pas accès à l'état du déploiement `agent-image` (pods, événements, spec) : je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment l'établir rapidement.
+v1,image,chat-claude,1,tag d'image inexistant,1.0,0.0,,"Je n'ai pas accès à l'état du déploiement `agent-image` (pods, événements, spec) : je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment l'établir rapidement.
 
 ## 1. Diagnostic
 
@@ -103,7 +103,7 @@ env:
 Dans l'état actuel, le conteneur fait seulement `echo` puis `exit 1`. Même avec la variable, il se terminera donc en erreur. Cette commande est un scénario de test. Une vraie application remplacerait ce `command`.
 
 **Certitude** — Élevée. Les logs, le code de sortie et l'absence de `env` concordent. Pour confirmer, regardez si le pod passe en `Running` après l'ajout de la variable. Cela suppose que la commande du conteneur soit celle d'une vraie application."
-v1,crash,chat-claude,1,variable DATABASE_URL manquante → exit 1,0.5,0.5,,"Je n'ai pas accès à l'état du déploiement `agent-crash` (pods, événements, logs) dans cette conversation, donc je ne peux pas vous donner la cause exacte sans inventer. Voici comment l'établir rapidement.
+v1,crash,chat-claude,1,variable DATABASE_URL manquante → exit 1,0.5,0.0,,"Je n'ai pas accès à l'état du déploiement `agent-crash` (pods, événements, logs) dans cette conversation, donc je ne peux pas vous donner la cause exacte sans inventer. Voici comment l'établir rapidement.
 
 ## 1. Constater le problème
 
@@ -187,7 +187,7 @@ Cette commande déclenche un rollout. Le pod est déjà en échec, donc le risqu
 Si les 100 Mio sont un bug (fuite ou allocation inutile), il vaut mieux corriger l'application plutôt que relever la limite.
 
 **Certitude** — Élevée. Le code de sortie 137 avec la raison `OOMKilled` et l'allocation de 100 Mio dans la commande, face à une limite de 48 Mi, suffisent à l'établir. Pour confirmer, appliquez le patch et vérifiez que le pod passe en `Running` sans nouveaux redémarrages."
-v1,oom,chat-claude,1,"OOMKilled, limite 48Mi trop basse",1.0,0.5,,"Je n'ai pas accès à l'état du déploiement `agent-oom` : je ne vois ni son manifeste, ni ses pods, ni ses événements. Je ne peux donc pas confirmer la cause exacte. Le nom suggère un `OOMKilled`, mais c'est une hypothèse. Voici comment la vérifier.
+v1,oom,chat-claude,1,"OOMKilled, limite 48Mi trop basse",1.0,0.0,,"Je n'ai pas accès à l'état du déploiement `agent-oom` : je ne vois ni son manifeste, ni ses pods, ni ses événements. Je ne peux donc pas confirmer la cause exacte. Le nom suggère un `OOMKilled`, mais c'est une hypothèse. Voici comment la vérifier.
 
 ## 1. Diagnostic
 
@@ -270,7 +270,7 @@ Ajoutez aussi une limite si vous le souhaitez, par exemple `limits.cpu: 200m`. L
 **Certitude** — Élevée. L'événement du scheduler, la request de 64 CPU et la capacité des nœuds disent tous la même chose. Le pod passera en `Running` une fois la request corrigée.
 
 D'autres déploiements du namespace sont aussi en échec, avec des causes distinctes : `agent-selector`, `agent-storage`, `agent-image`, `agent-config`, `agent-crash`, `agent-oom` et `agent-probe`. Je peux les analyser si vous le souhaitez."
-v1,pending,chat-claude,1,request de 64 CPU impossible,1.0,0.5,,"Je ne peux pas inspecter le cluster depuis cette conversation : je ne vois ni le manifeste ni l'état réel du déploiement `agent-pending`. Je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment la trouver rapidement.
+v1,pending,chat-claude,1,request de 64 CPU impossible,1.0,0.0,,"Je ne peux pas inspecter le cluster depuis cette conversation : je ne vois ni le manifeste ni l'état réel du déploiement `agent-pending`. Je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment la trouver rapidement.
 
 ## 1. Diagnostic
 
@@ -350,7 +350,7 @@ Les deux commandes modifient le cluster. La première déclenche un nouveau roll
 Vérification : `kubectl -n aikube-agent get pods -l app=agent-selector -w`
 
 **Certitude** — Élevée. L'événement du scheduler, le `nodeSelector` et l'absence de nœud portant ce label concordent. Je n'ai pas pu lister les labels complets des nœuds, seulement tester le sélecteur. Cela suffit pour conclure."
-v1,selector,chat-claude,1,nodeSelector sans nœud correspondant,0.5,0.5,,"Je n'ai pas accès à l'état du déploiement `agent-selector` : je ne vois ni ses pods, ni ses événements, ni ses logs. Je ne peux donc pas vous donner une cause exacte sans inventer. Voici comment l'identifier rapidement.
+v1,selector,chat-claude,1,nodeSelector sans nœud correspondant,0.5,0.0,,"Je n'ai pas accès à l'état du déploiement `agent-selector` : je ne vois ni ses pods, ni ses événements, ni ses logs. Je ne peux donc pas vous donner une cause exacte sans inventer. Voici comment l'identifier rapidement.
 
 ## 1. Diagnostic
 
@@ -427,7 +427,7 @@ envFrom:
 **Certitude** — Élevée. L'événement, le YAML et la liste des ConfigMaps donnent la même cause. Pour confirmer, vérifiez après correction que `kubectl get pod -n aikube-agent -l app=agent-config` passe à `Running`.
 
 Les autres déploiements du namespace (agent-crash, agent-oom, agent-image, agent-pending, agent-probe, agent-selector, agent-storage) ont leurs propres problèmes, sans lien avec celui-ci. Je peux les analyser si vous le souhaitez."
-v1,config,chat-claude,1,ConfigMap agent-settings absente,1.0,0.5,,"Je ne peux pas inspecter le déploiement `agent-config` depuis ici : je n'ai pas accès à son état (pods, événements, logs, spec). Je ne peux donc pas vous donner une cause exacte sans inventer. Voici comment l'identifier en quelques commandes.
+v1,config,chat-claude,1,ConfigMap agent-settings absente,1.0,0.0,,"Je ne peux pas inspecter le déploiement `agent-config` depuis ici : je n'ai pas accès à son état (pods, événements, logs, spec). Je ne peux donc pas vous donner une cause exacte sans inventer. Voici comment l'identifier en quelques commandes.
 
 ## 1. État général
 ```bash
@@ -492,7 +492,7 @@ Le patch déclenche un rolling update. Comme l'unique réplique n'est de toute f
 **Certitude** — Élevée. Le message « connection refused » sur 8081, la configuration de la sonde et le démarrage normal de nginx convergent. Après le correctif, le pod devrait passer à `1/1 Ready`.
 
 Les autres déploiements du namespace (`agent-crash`, `agent-oom`, `agent-image`, `agent-config`, `agent-pending`, `agent-selector`, `agent-storage`) sont aussi en erreur. Ce sont des problèmes distincts, et je peux les analyser si vous le souhaitez."
-v1,probe,chat-claude,1,readinessProbe sur le port 8081 au lieu de 80,0.5,0.5,,"Je ne peux pas répondre précisément : je n'ai pas accès à l'état du déploiement `agent-probe` (pods, événements, logs, spec). Je ne vais pas inventer une cause. Voici comment l'établir rapidement.
+v1,probe,chat-claude,1,readinessProbe sur le port 8081 au lieu de 80,0.5,0.0,,"Je ne peux pas répondre précisément : je n'ai pas accès à l'état du déploiement `agent-probe` (pods, événements, logs, spec). Je ne vais pas inventer une cause. Voici comment l'établir rapidement.
 
 ## 1. Diagnostic
 
@@ -569,7 +569,7 @@ kubectl -n aikube-agent get endpoints agent-svc
 Si le Service est géré par un manifeste YAML, corrigez aussi `selector.app: agent-backend` dans ce fichier. Sinon, le prochain `kubectl apply` remettra la faute.
 
 **Certitude** — Élevée. La différence entre le sélecteur et le label du pod est visible directement, et les endpoints sont vides. Après le patch, `kubectl get endpoints agent-svc` doit afficher l'IP `10.244.1.41:80`, ce qui confirmera la correction."
-v1,service,chat-claude,1,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.5,,"Je ne peux pas inspecter l'état réel de `agent-svc` : je n'ai pas accès à ses manifestes, à ses endpoints ni à ses événements. Je ne veux pas inventer une cause. Voici comment trouver la cause exacte en quelques commandes.
+v1,service,chat-claude,1,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.0,,"Je ne peux pas inspecter l'état réel de `agent-svc` : je n'ai pas accès à ses manifestes, à ses endpoints ni à ses événements. Je ne veux pas inventer une cause. Voici comment trouver la cause exacte en quelques commandes.
 
 ## 1. Le service a-t-il des endpoints ?
 
@@ -674,7 +674,7 @@ Si vous voulez vraiment une classe `fast-ssd-inexistante`, créez plutôt une St
 Pensez aussi à corriger le manifeste source (Git ou Helm), sinon l'erreur reviendra au prochain `apply`.
 
 **Certitude** — Élevée. Le PVC, les événements et la liste des StorageClasses disent la même chose. Pour confirmer après correction, vérifiez que `kubectl -n aikube-agent get pvc agent-data` affiche `Bound`, puis que le pod passe en `Running`."
-v1,storage,chat-claude,1,PVC sur une StorageClass inexistante,1.0,0.5,,"Je n'ai pas accès à l'état du déploiement `agent-storage` : je ne peux ni lire ses pods, ni ses événements, ni ses logs. Je ne peux donc pas confirmer s'il y a un problème ni en donner la cause exacte sans inventer. Voici comment l'établir rapidement.
+v1,storage,chat-claude,1,PVC sur une StorageClass inexistante,1.0,0.0,,"Je n'ai pas accès à l'état du déploiement `agent-storage` : je ne peux ni lire ses pods, ni ses événements, ni ses logs. Je ne peux donc pas confirmer s'il y a un problème ni en donner la cause exacte sans inventer. Voici comment l'établir rapidement.
 
 ## 1. Diagnostic
 
@@ -738,7 +738,7 @@ kubectl -n aikube-agent get pod -l app=agent-healthy
 Si le `NodeNotReady` vous préoccupe, regardez `kubectl describe node minikube-m03`. Je peux aussi regarder l'historique de charge de l'hôte pour cette tranche horaire. Je peux enfin diagnostiquer en détail l'un des autres déploiements en échec.
 
 **Certitude** — Élevée pour l'état actuel : le pod et le déploiement concordent. Elle est moyenne pour l'événement `NodeNotReady`, dont je n'ai pas cherché la cause."
-v1,healthy,chat-claude,1,aucune panne (témoin),1.0,1.0,,"Je ne peux pas me prononcer sur `agent-healthy` : je n'ai pas accès à son état (statut, événements, logs, spec). Le contexte fourni ne contient que la capacité des nœuds, et je ne veux pas inventer une cause.
+v1,healthy,chat-claude,1,aucune panne (témoin),1.0,0.0,,"Je ne peux pas me prononcer sur `agent-healthy` : je n'ai pas accès à son état (statut, événements, logs, spec). Le contexte fourni ne contient que la capacité des nœuds, et je ne veux pas inventer une cause.
 
 ## Ce que je sais
 - Les nœuds ont largement de la capacité libre (CPU ≥ 3150m, RAM ≥ 11 Gio par nœud). Un `Pending` pour manque de ressources est donc peu probable, sauf si le pod demande des requests énormes.
@@ -802,7 +802,7 @@ Si le Deployment est géré par un manifeste ou du GitOps, corrigez le tag à ce
 Le changement d'image déclenche un rollout de `svc-05`. Le risque est faible, puisque le pod actuel ne tourne déjà pas.
 
 **Certitude** — Élevée sur la cause : le message du registre est explicite. Pour confirmer, lancez `kubectl -n aikube-agent2 rollout status deploy/svc-05` après la correction. Si le pod passe ensuite en CrashLoop, ce sera un autre problème, que `kubectl logs` montrera. Si le Deployment est en réalité dans un autre namespace, dites-le-moi, car je n'ai pas pu lister `default` (API instable)."
-v2,image,chat-claude,1,tag d'image inexistant,1.0,0.5,,"Je ne peux pas me prononcer sur svc-05 : je n'ai pas accès à son état (pods, événements, logs). De plus, le namespace **`aikube-agent` n'existe pas** dans ce cluster. Le plus proche est **`aikube-agent2`**. Vérifiez si c'est celui que vous visez, ou si vous avez une faute de frappe.
+v2,image,chat-claude,1,tag d'image inexistant,1.0,0.0,,"Je ne peux pas me prononcer sur svc-05 : je n'ai pas accès à son état (pods, événements, logs). De plus, le namespace **`aikube-agent` n'existe pas** dans ce cluster. Le plus proche est **`aikube-agent2`**. Vérifiez si c'est celui que vous visez, ou si vous avez une faute de frappe.
 
 ## Diagnostic à lancer
 
@@ -876,7 +876,7 @@ Attention : la commande du conteneur est un script de test (`echo ...; sleep 2; 
 **Certitude** — Élevée sur la cause : le log et le manifeste sont cohérents. Deux points restent à confirmer :
 - que `aikube-agent2` est bien le namespace voulu ;
 - la vraie valeur de `DATABASE_URL`, que je ne peux pas déduire."
-v2,crash,chat-claude,1,variable DATABASE_URL manquante → exit 1,0.5,0.5,,"Je ne peux pas confirmer de problème sur `svc-03` pour l'instant, pour deux raisons.
+v2,crash,chat-claude,1,variable DATABASE_URL manquante → exit 1,0.5,0.0,,"Je ne peux pas confirmer de problème sur `svc-03` pour l'instant, pour deux raisons.
 
 ## 1. Le namespace `aikube-agent` n'existe pas
 Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`.
@@ -942,7 +942,7 @@ spec:
 Le patch relance le pod de ce déploiement. Comme il est déjà en échec, le risque est faible. Si l'allocation de 100 Mio n'est pas voulue, réduisez-la dans la commande plutôt que d'augmenter la limite.
 
 **Certitude** — Élevée. Le code 137 avec la raison OOMKilled et le décalage 100 Mio / 48 Mio concordent. Pour confirmer, vous pouvez lancer `kubectl -n aikube-agent2 describe pod svc-07-…` et vérifier `Last State: Terminated, Reason: OOMKilled`. Après le patch, le pod doit passer en `Running` sans nouveau redémarrage."
-v2,oom,chat-claude,1,"OOMKilled, limite 48Mi trop basse",1.0,0.5,,"Je ne peux pas me prononcer sur l'état de `svc-07` : je n'ai pas d'accès en lecture à ses pods, événements ou logs, et je préfère ne pas inventer une cause.
+v2,oom,chat-claude,1,"OOMKilled, limite 48Mi trop basse",1.0,0.0,,"Je ne peux pas me prononcer sur l'état de `svc-07` : je n'ai pas d'accès en lecture à ses pods, événements ou logs, et je préfère ne pas inventer une cause.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -1012,7 +1012,7 @@ Si tu corriges le manifeste d'origine, change `cpu: ""64""` en `cpu: ""64m""`, p
 Deux points à surveiller :
 - **Autres problèmes sans rapport :** le nœud `minikube-m03` est `NotReady`. L'API server a répondu de façon instable pendant mon analyse (`connection reset`). La machine hôte était surchargée (charge de 18 à 20 sur 4 cœurs depuis environ 18:55 UTC). Ces points peuvent aggraver la situation, mais ils n'expliquent pas le `Pending` de `svc-09`.
 - **Vérification du namespace :** si tu voulais bien `aikube-agent` et pas `aikube-agent2`, dis-le-moi. Je regarderais alors s'il a été supprimé ou mal nommé."
-v2,pending,chat-claude,1,request de 64 CPU impossible,0.5,0.5,,"Je ne peux pas confirmer l'état de `svc-09` : je n'ai pas accès à ses informations (statut, événements, logs), et je préfère ne pas inventer une cause.
+v2,pending,chat-claude,1,request de 64 CPU impossible,0.5,0.0,,"Je ne peux pas confirmer l'état de `svc-09` : je n'ai pas accès à ses informations (statut, événements, logs), et je préfère ne pas inventer une cause.
 
 ## Le namespace `aikube-agent` n'existe pas
 Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`.
@@ -1073,7 +1073,7 @@ kubectl patch deployment svc-06 -n aikube-agent2 --type=json \
 Le patch relance un rollout, ce qui est sans risque ici puisque le pod n'a jamais démarré. Si le déploiement est géré par un manifeste en Git, modifie aussi le manifeste. Sinon le prochain `kubectl apply` remettra le sélecteur.
 
 **Certitude** — Élevée. L'événement du scheduler et le YAML du déploiement donnent la même cause. Pour confirmer, lance `kubectl get nodes -L disktype`. Après la correction, le pod doit passer en `Running`."
-v2,selector,chat-claude,1,nodeSelector sans nœud correspondant,1.0,0.5,,"Je ne peux pas inspecter l'état du déploiement `svc-06` : je n'ai pas accès aux pods, événements ou logs. Je ne peux donc pas vous donner la cause exacte sans inventer.
+v2,selector,chat-claude,1,nodeSelector sans nœud correspondant,1.0,0.0,,"Je ne peux pas inspecter l'état du déploiement `svc-06` : je n'ai pas accès aux pods, événements ou logs. Je ne peux donc pas vous donner la cause exacte sans inventer.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -1165,7 +1165,7 @@ envFrom:
 - Quelles clés `agent-settings` doit contenir. Je ne peux pas les déduire du cluster.
 
 Pour confirmer la correction, lancez `kubectl get pod -n aikube-agent2 -l app=svc-08`. Le pod doit passer en `Running`."
-v2,config,chat-claude,1,ConfigMap agent-settings absente,1.0,0.5,,"Je ne peux pas vous donner de cause exacte : je n'ai aucun accès à l'état du déploiement `svc-08` (pods, événements, logs). Je préfère ne pas inventer un diagnostic.
+v2,config,chat-claude,1,ConfigMap agent-settings absente,1.0,0.0,,"Je ne peux pas vous donner de cause exacte : je n'ai aucun accès à l'état du déploiement `svc-08` (pods, événements, logs). Je préfère ne pas inventer un diagnostic.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -1235,7 +1235,7 @@ readinessProbe:
 Le patch déclenche un rolling update d'un seul pod. Le risque est faible, car le pod actuel n'est de toute façon pas Ready. Si vous voulez vraiment servir sur 8081, il faut plutôt configurer nginx pour écouter sur ce port.
 
 **Certitude** — Élevée. La cause est confirmée par la spec, par les événements et par les logs. Pour vérifier après correction, lancez `kubectl -n aikube-agent2 rollout status deploy/svc-04`. Si vous pensiez à un autre namespace, indiquez-le-moi."
-v2,probe,chat-claude,1,readinessProbe sur le port 8081 au lieu de 80,0.5,0.5,,"Je ne peux pas répondre précisément : je n'ai pas accès à l'état du déploiement `svc-04` (pods, événements, logs). De plus, **le namespace `aikube-agent` n'existe pas** sur ce cluster. Les plus proches sont `aikube-agent2` et `aikube-remediation`. Il y a peut-être une faute de frappe.
+v2,probe,chat-claude,1,readinessProbe sur le port 8081 au lieu de 80,0.5,0.0,,"Je ne peux pas répondre précisément : je n'ai pas accès à l'état du déploiement `svc-04` (pods, événements, logs). De plus, **le namespace `aikube-agent` n'existe pas** sur ce cluster. Les plus proches sont `aikube-agent2` et `aikube-remediation`. Il y a peut-être une faute de frappe.
 
 ## Vérifier le namespace
 
@@ -1307,7 +1307,7 @@ Si le service est défini dans un manifeste ou un chart Helm, corrigez-le à cet
 **Certitude** — Élevée. Le sélecteur ne correspond à aucun label et les Endpoints sont vides. La vérification des Endpoints après le patch la confirmera.
 
 **Remarque** — Les pods `svc-01` à `svc-09` du même namespace sont aussi en erreur : CrashLoopBackOff, OOMKilled, ImagePullBackOff, PVC non lié, etc. Ils n'ont aucun lien avec `web-front`. Je peux les analyser si vous le souhaitez."
-v2,service,chat-claude,1,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.5,,"## Je ne peux pas confirmer de problème
+v2,service,chat-claude,1,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.0,,"## Je ne peux pas confirmer de problème
 
 **1. Le namespace `aikube-agent` n'existe pas** dans ce cluster. Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`. Vous pensiez peut-être à **`aikube-agent2`**.
 
@@ -1399,7 +1399,7 @@ volumeBindingMode: Immediate
 Attention : le pod `storage-provisioner` de `kube-system` est lui-même en CrashLoopBackOff (75 redémarrages). Même avec la bonne StorageClass, le provisionnement dynamique risque de ne pas aboutir tant qu'il n'est pas réparé. Je n'ai pas encore examiné la cause de ce crash. Je peux le faire si vous voulez.
 
 **Certitude** — Élevée pour la cause : l'événement du PVC la nomme explicitement. Moyenne pour la réussite de la correction, à cause de l'état du `storage-provisioner`. Pour confirmer, lancez `kubectl get pvc -n aikube-agent2` après la correction. Le PVC doit passer en `Bound`, puis le pod en `Running`."
-v2,storage,chat-claude,1,PVC sur une StorageClass inexistante,0.5,0.5,,"## Je ne peux pas diagnostiquer svc-01 à ce stade
+v2,storage,chat-claude,1,PVC sur une StorageClass inexistante,0.5,0.0,,"## Je ne peux pas diagnostiquer svc-01 à ce stade
 
 Je n'ai pas accès à l'état réel du déploiement (pods, événements, logs), donc je ne peux pas vous donner de cause exacte sans l'inventer.
 
@@ -1542,7 +1542,7 @@ kubectl -n aikube-agent2 rollout status deployment/svc-05
 Dans le YAML source, remplacez aussi `image: busybox:9.99` par `image: busybox:1.36`, sinon un prochain `kubectl apply` remettra l'erreur. Le changement déclenche un rollout sur une seule réplique, et il n'y a aucun risque puisque le pod actuel ne tourne pas.
 
 **Certitude** — Élevée. L'erreur du registre est explicite, et le tag fautif apparaît à la fois dans le manifeste et dans les événements. Si vous visiez un autre namespace que `aikube-agent2`, indiquez-le-moi et je referai la vérification."
-v2,image,chat-claude,2,tag d'image inexistant,1.0,0.5,,"## Je ne peux pas confirmer l'état de svc-05
+v2,image,chat-claude,2,tag d'image inexistant,1.0,0.0,,"## Je ne peux pas confirmer l'état de svc-05
 
 Je n'ai pas accès à l'état en direct de ce déploiement (pods, événements, logs), donc je ne peux pas vous donner une cause exacte sans l'inventer.
 
@@ -1633,7 +1633,7 @@ Dans ce Deployment, la commande est un script `sh -c ...; exit 1` écrit en dur.
 **Certitude** — Élevée sur la cause : le message FATAL des logs correspond exactement à l'absence de `env` dans le spec. Deux points restent à confirmer :
 - que `aikube-agent2` est bien le namespace voulu ;
 - d'où doit venir la valeur de `DATABASE_URL`."
-v2,crash,chat-claude,2,variable DATABASE_URL manquante → exit 1,0.5,0.5,,"Je ne peux pas me prononcer sur l'état de `svc-03` : je n'ai pas accès à son état réel (pods, événements, logs), donc je ne vais pas inventer de cause.
+v2,crash,chat-claude,2,variable DATABASE_URL manquante → exit 1,0.5,0.0,,"Je ne peux pas me prononcer sur l'état de `svc-03` : je n'ai pas accès à son état réel (pods, événements, logs), donc je ne vais pas inventer de cause.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -1690,7 +1690,7 @@ Si l'allocation de 100 Mio n'est pas voulue, réduisez-la dans le code de l'appl
 **Certitude** — Élevée. L'`OOMKilled` avec le code 137 et le manifeste (100 Mio demandés pour une limite de 48 Mio) concordent. Pour confirmer, `kubectl -n aikube-agent2 get pod -l app=svc-07` doit montrer le pod en `Running` et `1/1` après la correction.
 
 Si vous pensiez à un autre namespace que `aikube-agent2`, dites-le-moi et je referai la vérification."
-v2,oom,chat-claude,2,"OOMKilled, limite 48Mi trop basse",1.0,1.0,,"Je ne peux pas vous donner de cause exacte : je n'ai pas accès à l'état du déploiement `svc-07` (pods, événements, logs). Je préfère ne pas inventer un diagnostic.
+v2,oom,chat-claude,2,"OOMKilled, limite 48Mi trop basse",1.0,0.0,,"Je ne peux pas vous donner de cause exacte : je n'ai pas accès à l'état du déploiement `svc-07` (pods, événements, logs). Je préfère ne pas inventer un diagnostic.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -1753,7 +1753,7 @@ kubectl -n aikube-agent2 rollout status deployment/svc-09
 Corrigez aussi le manifest source en mettant `cpu: 64m`, sinon la prochaine application remettra `64`. Si vous aviez vraiment besoin de plus de CPU, restez sous 3 CPU, car un pod doit tenir sur un seul nœud.
 
 **Certitude** — Élevée pour la cause : la valeur `cpu: ""64""` et le message du scheduler concordent. Pour confirmer après correction, vérifiez que le pod passe en `Running` avec `kubectl -n aikube-agent2 get pod -l app=svc-09`. Les autres déploiements du namespace (`svc-01`, `svc-03` à `svc-08`, `web-backend`) ont des pannes différentes. Je ne les ai pas analysés ici."
-v2,pending,chat-claude,2,request de 64 CPU impossible,0.5,0.5,,"Je ne peux pas vous donner de cause exacte : je n'ai pas accès à l'état du déploiement `svc-09` (pods, événements, logs), donc toute cause que j'avancerais serait une supposition.
+v2,pending,chat-claude,2,request de 64 CPU impossible,0.5,0.0,,"Je ne peux pas vous donner de cause exacte : je n'ai pas accès à l'état du déploiement `svc-09` (pods, événements, logs), donc toute cause que j'avancerais serait une supposition.
 
 ## Point à vérifier d'abord
 Le namespace `aikube-agent` **n'existe pas** dans ce cluster. Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`.
@@ -1812,7 +1812,7 @@ kubectl label node minikube-m02 disktype=nvme
 Le scheduler replanifie ensuite le pod tout seul. Dans les deux cas, rien n'est supprimé et aucun redémarrage de production n'est nécessaire. Si vous passez par le manifeste, corrigez-le aussi, sinon le prochain `kubectl apply` remettra le sélecteur.
 
 **Certitude** — Élevée. L'absence de label `disktype=nvme` sur les nœuds est confirmée par la sélection par label, qui ne renvoie rien, et par le describe de `minikube-m02`. Je n'ai pas décrit `minikube` ni `minikube-m03`. Les 3 nœuds sont tous rejetés par le scheduler, ce qui confirme la même cause. Si vous pensiez à un autre namespace que `aikube-agent2`, dites-le-moi et je vérifie."
-v2,selector,chat-claude,2,nodeSelector sans nœud correspondant,0.5,0.5,,"Je ne peux pas confirmer s'il y a un problème : je n'ai pas accès à l'état du déploiement `svc-06` (pods, événements, logs). Une cause « exacte » serait donc inventée.
+v2,selector,chat-claude,2,nodeSelector sans nœud correspondant,0.5,0.0,,"Je ne peux pas confirmer s'il y a un problème : je n'ai pas accès à l'état du déploiement `svc-06` (pods, événements, logs). Une cause « exacte » serait donc inventée.
 
 **Le namespace `aikube-agent` n'existe pas** sur ce cluster. Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`. Vous pensiez peut-être à **`aikube-agent2`**, ou le nom contient une faute de frappe.
 
@@ -1849,7 +1849,7 @@ kubectl -n aikube-agent2 logs <pod> --previous
 La charge de l'hôte est de **16.37 sur 4 cœurs** (pic à 20.21). Elle peut provoquer des timeouts de probes (liveness/readiness) et des redémarrages intempestifs. Si c'est le cas, augmentez `timeoutSeconds`, `periodSeconds` et `failureThreshold`.
 
 Si vous m'envoyez la sortie de `kubectl -n aikube-agent2 describe deploy svc-06` et des événements, je pourrai identifier la cause précise et vous donner le YAML corrigé."
-v2,config,agent,2,ConfigMap agent-settings absente,0.5,0.5,,"**Diagnostic** — Je ne peux pas me prononcer sur svc-08. Pour l'instant, l'API server du cluster ne répond pas de façon fiable, donc je n'ai pas pu lire l'état du déploiement. La machine hôte est en surcharge CPU sévère depuis environ 18:55 UTC, et c'est probablement la cause de cette instabilité.
+v2,config,agent,2,ConfigMap agent-settings absente,0.5,0.0,,"**Diagnostic** — Je ne peux pas me prononcer sur svc-08. Pour l'instant, l'API server du cluster ne répond pas de façon fiable, donc je n'ai pas pu lire l'état du déploiement. La machine hôte est en surcharge CPU sévère depuis environ 18:55 UTC, et c'est probablement la cause de cette instabilité.
 
 **Preuves**
 - Le premier appel a renvoyé `namespaces ""aikube-agent"" not found`. Je ne le tiens pas pour fiable, car les appels suivants ont échoué avec une autre erreur. Le namespace n'existe peut-être pas, ou l'API a répondu à moitié.
@@ -1876,7 +1876,7 @@ v2,config,agent,2,ConfigMap agent-settings absente,0.5,0.5,,"**Diagnostic** — 
    Dites-moi alors, ou relancez-moi, et je ferai le diagnostic précis (OOMKilled, sondes, image, etc.).
 
 **Certitude** — Faible sur svc-08, parce que je n'ai aucune donnée sur lui. Elle est moyenne sur le lien entre la surcharge CPU de l'hôte et l'indisponibilité de l'API. La coïncidence horaire est nette, mais je n'ai pas pu lire les logs etcd ou kube-apiserver. Le prochain test utile est de relancer `list_problems` une fois la charge de l'hôte redescendue sous 1,5 par cœur."
-v2,config,chat-claude,2,ConfigMap agent-settings absente,1.0,0.5,,"Je ne peux pas vous donner de cause exacte pour l'instant : je n'ai pas accès à l'état de `svc-08` (pods, événements, logs), donc toute cause que j'annoncerais serait une supposition.
+v2,config,chat-claude,2,ConfigMap agent-settings absente,1.0,0.0,,"Je ne peux pas vous donner de cause exacte pour l'instant : je n'ai pas accès à l'état de `svc-08` (pods, événements, logs), donc toute cause que j'annoncerais serait une supposition.
 
 **Le namespace `aikube-agent` n'existe pas** sur ce cluster. Ceux qui existent sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`. Vous vouliez probablement `aikube-agent2`, ou le déploiement a été créé dans un autre namespace.
 
@@ -1936,7 +1936,7 @@ Si 8081 est voulu, il faut à la place faire écouter nginx sur ce port, avec un
 **Certitude** — Élevée. L'événement « connection refused » sur 8081, la spec du Deployment et les logs nginx convergent. Pour confirmer, vérifiez après le patch que le pod passe `1/1 Ready`. Si le vrai namespace est un autre que `aikube-agent2`, dites-le-moi et je vérifie.
 
 Les autres pods d'`aikube-agent2` (svc-01, 03, 05 à 09) sont aussi en erreur, mais ce sont des problèmes distincts. Je peux les examiner si vous le souhaitez."
-v2,probe,chat-claude,2,readinessProbe sur le port 8081 au lieu de 80,0.5,0.5,,"Je ne peux pas vous dire si `svc-04` pose problème, car je n'ai pas accès à son état (pods, événements, logs). Je ne vais pas deviner une cause.
+v2,probe,chat-claude,2,readinessProbe sur le port 8081 au lieu de 80,0.5,0.0,,"Je ne peux pas vous dire si `svc-04` pose problème, car je n'ai pas accès à son état (pods, événements, logs). Je ne vais pas deviner une cause.
 
 ## Point à vérifier d'abord : le namespace
 
@@ -2009,7 +2009,7 @@ kubectl -n aikube-agent2 get endpoints web-front
 Une IP de pod doit apparaître.
 
 **Certitude** — Élevée pour les deux défauts, car les preuves sont directes : sélecteur sans correspondance, endpoints vides, probe refusée sur le port 8081. Moyenne sur l'identité du backend voulu, `svc-04`. Pour la confirmer, regardez le Deployment ou le manifeste d'origine du service, ou dites-moi si le bon namespace est bien `aikube-agent2`."
-v2,service,chat-claude,2,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.5,,"Je ne peux pas vous donner de diagnostic fiable : je n'ai pas d'outil pour inspecter l'état du Service `web-front`, et le namespace `aikube-agent` n'apparaît pas dans la liste du cluster.
+v2,service,chat-claude,2,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.0,,"Je ne peux pas vous donner de diagnostic fiable : je n'ai pas d'outil pour inspecter l'état du Service `web-front`, et le namespace `aikube-agent` n'apparaît pas dans la liste du cluster.
 
 Les namespaces existants sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system`, `test-app`.
 
@@ -2107,7 +2107,7 @@ L'autre option est de créer une StorageClass `fast-ssd`. Elle n'a de sens que s
 **Certitude** — Moyenne à élevée. La chaîne pod `Pending`, PVC `Pending` avec `fast-ssd`, et seule la classe `standard` présente est cohérente. Je n'ai pas pu lire le `describe` du PVC, ni ses événements, qui auraient affiché `storageclass ""fast-ssd"" not found`. L'API server a coupé les connexions (`connection reset by peer`). Il est instable : `kube-apiserver` a 19 redémarrages, et la machine hôte est surchargée (charge 17 pour 4 cœurs). Pour confirmer, lancez `kubectl -n aikube-agent2 describe pvc agent-data` et `kubectl get sc`. Si vous visiez un autre namespace, dites-le-moi.
 
 Le `svc-01` n'est pas le seul pod en difficulté dans `aikube-agent2` : `svc-03` à `svc-09` ont aussi des problèmes"
-v2,storage,chat-claude,2,PVC sur une StorageClass inexistante,1.0,0.5,,"Je ne peux pas me prononcer sur l'état de `svc-01` : je n'ai pas accès à son état réel (pods, événements, logs), donc je ne vais pas inventer une cause.
+v2,storage,chat-claude,2,PVC sur une StorageClass inexistante,1.0,0.0,,"Je ne peux pas me prononcer sur l'état de `svc-01` : je n'ai pas accès à son état réel (pods, événements, logs), donc je ne vais pas inventer une cause.
 
 ## Point à vérifier d'abord : le namespace
 Le namespace `aikube-agent` n'existe pas dans la liste du cluster. Les namespaces présents sont : `aikube-agent2`, `aikube-remediation`, `default`, `kube-node-lease`, `kube-public`, `kube-system` et `test-app`. Vous vouliez peut-être dire **`aikube-agent2`**. Vérifiez où se trouve le déploiement :
@@ -2210,3 +2210,2133 @@ livenessProbe:
 ```
 
 Si vous me collez la sortie de `kubectl describe deploy svc-02` et de `kubectl describe pod` (section Events), je vous donnerai la cause exacte et le correctif précis."
+v2,image,chat-claude-obs,1,tag d'image inexistant,1.0,1.0,,"# Diagnostic de svc-05
+
+Oui, le déploiement `svc-05` pose un problème : son pod `svc-05-554d5c5866-mh5fn` est en **ImagePullBackOff / ErrImagePull** et ne démarrera jamais en l'état.
+
+## Cause exacte
+
+Le déploiement référence une image dont le tag n'existe pas : **`busybox:9.99`**. L'événement décisif est :
+
+```
+Failed to pull image ""busybox:9.99"": ... manifest for busybox:9.99 not found: manifest unknown
+```
+
+Le premier échec (`request canceled while waiting for connection (Client.Timeout exceeded...)`) était un timeout réseau transitoire vers Docker Hub, probablement lié à la forte charge de l'hôte. Il n'est pas la cause du problème : même une fois le registre joignable, le tag `9.99` reste introuvable. Un simple redémarrage ne servirait donc à rien.
+
+## Correction
+
+Utiliser un tag valide. `busybox:1.36` est déjà présent sur `minikube-m02`, où `svc-05` est planifié (voir l'événement `Pulled` de `svc-03`), donc aucun téléchargement ne sera nécessaire :
+
+```bash
+kubectl set image deployment/svc-05 '*=busybox:1.36' -n aikube-agent2
+kubectl rollout status deployment/svc-05 -n aikube-agent2
+```
+
+Le `'*'` cible tous les conteneurs, car je n'ai pas pu relever leur nom (le `kubectl get` a expiré). Si vous le connaissez, remplacez-le par `<nom-du-conteneur>=busybox:1.36`.
+
+Si le déploiement est géré par un manifeste ou du GitOps, corrigez la source :
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: app   # nom à adapter
+          image: busybox:1.36
+```
+
+## Remarques
+
+- Les erreurs `etcdserver: request timed out` et `connection refused` sur l'API server (svc-01, svc-02, svc-03, svc-09) sont sans rapport avec `svc-05`. Elles viennent de l'instabilité du control plane, très probablement due à la charge de l'hôte (20.76 sur 4 cœurs). Cela explique aussi le timeout de votre `kubectl get`. Si une commande échoue, relancez-la après quelques secondes.
+- Le PVC `agent-data` échoue aussi (StorageClass `fast-ssd` inexistante, alors que seule `standard` existe). C'est un autre problème, sans lien avec `svc-05`."
+v2,crash,chat-claude-obs,1,variable DATABASE_URL manquante → exit 1,0.5,0.0,,"## Verdict : impossible à établir avec les données fournies
+
+Les deux commandes ont échoué, donc je n'ai aucune information sur `svc-03` (ni son état, ni ses pods, ni ses événements). Je ne peux pas désigner une cause exacte sans inventer. Ce qui est observable, c'est un problème en amont, au niveau du cluster et de l'hôte.
+
+## Ce que les échecs indiquent
+
+- **Timeout à 60 s** et **`connection reset by peer`** sur `127.0.0.1:1185` : l'API server de minikube est injoignable ou instable.
+- **Version du serveur inconnue, 0 nœud planifiable** : le contexte ne parvient pas à interroger le cluster.
+- **Charge hôte de 19,9 sur 4 cœurs** (pic à 20,9) : la machine WSL2 est très saturée. L'API server et etcd, très sensibles à la latence, peuvent alors ne plus répondre à temps. C'est probablement la cause de ces erreurs.
+
+Si le cluster est dans cet état, `svc-03` peut très bien être sain : on ne peut simplement pas le savoir pour l'instant.
+
+## Marche à suivre
+
+1. **Vérifier minikube et l'API server**
+```bash
+minikube status
+kubectl cluster-info
+kubectl get nodes
+```
+2. **Identifier ce qui sature l'hôte**
+```bash
+uptime
+top -o %CPU
+docker stats --no-stream
+```
+Réduire la charge (arrêter les workloads inutiles ou d'autres conteneurs) ou, si besoin, redémarrer :
+```bash
+minikube stop && minikube start
+```
+Si le cluster est trop gourmand, limitez ses ressources au démarrage : `minikube start --cpus=3 --memory=6g`.
+
+3. **Une fois l'API stable, cibler uniquement `svc-03`** (des requêtes plus légères que le `get` global) :
+```bash
+kubectl get deploy svc-03 -n aikube-agent2 -o wide
+kubectl describe deploy svc-03 -n aikube-agent2
+kubectl get pods -n aikube-agent2 -l app=svc-03
+kubectl describe pod <pod> -n aikube-agent2
+kubectl logs <pod> -n aikube-agent2 --previous
+kubectl get events -n aikube-agent2 --field-selector involvedObject.name=<pod>
+```
+Adaptez le label `app=svc-03` à celui du déploiement.
+
+## Causes classiques à chercher ensuite
+
+| Symptôme | Cause probable |
+|---|---|
+| `Pending` + `FailedScheduling` | requests CPU/mémoire trop grandes, ou aucun nœud disponible |
+| `ImagePullBackOff` | image ou tag inexistant, registre inaccessible |
+| `CrashLoopBackOff` | erreur applicative, variable d'environnement ou ConfigMap/Secret manquant |
+| `OOMKilled` | limite mémoire trop basse |
+| `Pending` sur un PVC | pas de StorageClass (aucune n'existe ici) |
+| Service sans endpoints | le selector ne correspond pas aux labels des pods |
+
+Si vous me renvoyez le `describe` du déploiement et du pod, ainsi que les événements, une fois l'API revenue, je pourrai vous donner la cause exacte et le correctif en YAML."
+v2,oom,chat-claude-obs,1,"OOMKilled, limite 48Mi trop basse",1.0,1.0,,"## Verdict
+
+Oui, svc-07 pose un problème : son pod `svc-07-7ff9bc6776-9x87x` est en statut **OOMKilled**. Le conteneur `app` (`python:3.12-alpine`) a démarré (événement `Started` il y a 4m48s) puis a été tué par le noyau parce qu'il a dépassé sa limite mémoire (cgroup).
+
+Ce n'est pas un problème d'image ni d'ordonnancement :
+- l'image est déjà présente (`Pulled ... already present`) ;
+- le pod a été placé sur `minikube-m02` (`Scheduled`) ;
+- le conteneur a été créé et démarré.
+
+## Ce que je ne peux pas déterminer avec ces relevés
+
+La **valeur exacte** de la limite mémoire et la consommation réelle du process ne figurent pas dans ce que tu m'as fourni. Je ne peux donc pas t'indiquer le chiffre fautif sans le deviner. Les événements n'affichent pas non plus de ligne `OOMKilled` explicite, seulement le statut du pod.
+
+Pour confirmer :
+
+```bash
+# Raison et code de sortie (attendu : Reason: OOMKilled, Exit Code: 137)
+kubectl describe pod svc-07-7ff9bc6776-9x87x -n aikube-agent2 | grep -A8 ""Last State\|State:""
+
+# Limites et requests actuelles
+kubectl get deploy svc-07 -n aikube-agent2 -o jsonpath='{.spec.template.spec.containers[0].resources}{""\n""}'
+
+# Commande exécutée dans le conteneur
+kubectl get deploy svc-07 -n aikube-agent2 -o jsonpath='{.spec.template.spec.containers[0].command}{"" ""}{.spec.template.spec.containers[0].args}{""\n""}'
+
+# Logs du conteneur tué
+kubectl logs svc-07-7ff9bc6776-9x87x -n aikube-agent2 --previous
+```
+
+## Correction
+
+Il y a deux cas possibles, selon ce que montrent les commandes ci-dessus :
+
+1. **Limite trop basse** (par exemple `limits.memory: 16Mi` ou `32Mi`, ce qui est insuffisant pour un interpréteur Python). Augmente-la :
+
+```bash
+kubectl set resources deploy/svc-07 -n aikube-agent2 \
+  --requests=memory=64Mi --limits=memory=256Mi
+```
+
+Ou dans le manifeste (valeurs indicatives, à ajuster selon la consommation mesurée) :
+
+```yaml
+        resources:
+          requests:
+            memory: ""64Mi""
+          limits:
+            memory: ""256Mi""
+```
+
+2. **Fuite mémoire ou charge trop gourmande** dans le programme Python lui-même. Dans ce cas, relever la limite ne fait que retarder le problème : il faut corriger le code ou la charge. Observe la consommation avec `kubectl top pod -n aikube-agent2` (si metrics-server est actif).
+
+## Points d'attention
+
+- **Cluster instable** : les événements montrent plusieurs `etcdserver: request timed out` et un `connection refused` sur l'API server. La machine hôte est surchargée (charge 18.88 sur 4 cœurs), ce qui explique sans doute ces timeouts. Cela peut perturber les relevés (par exemple `RESTARTS 0` malgré un OOMKilled). Allège la charge de l'hôte avant de conclure.
+- **Autres déploiements** : svc-01, 02, 03, 05 et 09 ont chacun leur propre problème (PVC Pending, image `busybox:9.99` inexistante, ressources CPU insuffisantes, etc.). Ils sont indépendants de svc-07."
+v2,pending,chat-claude-obs,1,request de 64 CPU impossible,1.0,1.0,,"## Diagnostic
+
+Oui, svc-09 pose un problème. Son pod `svc-09-57d99b785d-qqrpf` est **Pending** et n'a jamais été planifié sur un nœud.
+
+**Cause exacte** : l'événement du scheduler dit :
+
+```
+0/3 nodes are available: 3 Insufficient cpu.
+```
+
+Le pod demande plus de CPU (`resources.requests.cpu`) qu'aucun nœud ne peut en offrir. Le scheduler raisonne sur les *requests* réservées, pas sur l'usage réel. Or la capacité CPU libre est de :
+
+| Nœud | CPU libre |
+|---|---|
+| minikube | 3100m |
+| minikube-m02 | 3610m |
+| minikube-m03 | 3680m |
+
+La request CPU de svc-09 est donc **strictement supérieure à 3680m**. Un pod doit tenir sur un seul nœud, donc il ne sera jamais planifié tel quel. Je ne vois pas la valeur exacte dans ce que vous m'avez transmis. Vous pouvez la vérifier ainsi :
+
+```bash
+kubectl get deploy svc-09 -n aikube-agent2 \
+  -o jsonpath='{.spec.template.spec.containers[0].resources}'
+```
+
+**Ce qui n'est pas la cause** : l'événement `FailedCreate … connection refused` (il y a 8 min) était une indisponibilité transitoire de l'API server. Il a été résolu, puisque le ReplicaSet a ensuite créé le pod (`SuccessfulCreate`). Les `etcdserver: request timed out` des autres déploiements relèvent aussi de cette instabilité, pas de svc-09.
+
+## Correction
+
+Ramenez la request CPU à une valeur réaliste, par exemple :
+
+```bash
+kubectl set resources deployment svc-09 -n aikube-agent2 \
+  --requests=cpu=250m,memory=64Mi \
+  --limits=cpu=500m,memory=128Mi
+```
+
+Ou dans le manifeste :
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          resources:
+            requests:
+              cpu: 250m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+```
+
+Vérification :
+
+```bash
+kubectl rollout status deployment/svc-09 -n aikube-agent2
+kubectl get pods -n aikube-agent2 -l app=svc-09 -o wide
+```
+
+## Point d'attention
+
+Une fois planifié, le pod pourrait passer en `CrashLoopBackOff` comme svc-03. En effet, `busybox:1.36` quitte immédiatement s'il n'a pas de commande longue durée. Si c'est le cas, ajoutez par exemple `command: [""sleep"", ""3600""]`."
+v2,selector,chat-claude-obs,1,nodeSelector sans nœud correspondant,0.5,0.5,,"## Le déploiement `svc-06` n'apparaît pas dans le relevé
+
+Dans la sortie de `kubectl get deployments,...` pour `aikube-agent2`, il y a `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`, mais aucun `svc-06`. Aucun ReplicaSet, pod ni événement ne le mentionne. Je ne peux donc pas diagnostiquer un problème sur un objet absent.
+
+Plusieurs explications sont possibles :
+- Il n'a jamais été créé. Les événements `FailedCreate` et `ReplicaSetCreateError` avec des `etcdserver: request timed out` et des `connection refused` montrent que l'API server et etcd étaient instables, sur une machine hôte surchargée (charge 18.5 sur 4 cœurs). La création a pu échouer ou être perdue.
+- Il est dans un autre namespace, ou son nom est légèrement différent.
+- Il a été supprimé.
+
+Pour vérifier :
+```bash
+kubectl get deploy svc-06 -n aikube-agent2
+kubectl get deploy -A | grep svc-06
+kubectl get events -n aikube-agent2 | grep svc-06
+```
+S'il n'existe pas, il suffit de réappliquer son manifeste une fois l'API stable (`kubectl apply -f ...`).
+
+## Les déploiements présents qui posent problème
+
+| Déploiement | Symptôme | Cause visible |
+|---|---|---|
+| `svc-01` | Pending | PVC `agent-data` non lié : la StorageClass `fast-ssd` n'existe pas (seule `standard` existe) |
+| `svc-05` | ImagePullBackOff | L'image `busybox:9.99` n'existe pas (`manifest unknown`) |
+| `svc-09` | Pending | `Insufficient cpu` sur les 3 nœuds, donc les requests CPU du pod sont trop élevées |
+| `svc-03`, `svc-07` | CrashLoopBackOff | La cause n'est pas visible ici, il faut `kubectl logs --previous` |
+
+Corrections possibles :
+- **`svc-01`** : utiliser `storageClassName: standard` dans le PVC, ou créer la StorageClass `fast-ssd`. Le `storageClassName` d'un PVC étant immuable, il faut supprimer et recréer le PVC.
+- **`svc-05`** : utiliser un tag valide, par exemple `busybox:1.36`.
+- **`svc-09`** : réduire les `requests.cpu`. Le plus gros pod plaçable demande au plus 3680m.
+- **`svc-03` et `svc-07`** : lancer `kubectl logs <pod> -n aikube-agent2 --previous` et `kubectl describe pod <pod> -n aikube-agent2`. Des conteneurs busybox ou python sans commande longue durée se terminent immédiatement, ce qui est une cause fréquente.
+
+Si tu me donnes le manifeste de `svc-06` ou la sortie de `kubectl get deploy -A`, je pourrai regarder plus précisément."
+v2,config,chat-claude-obs,1,ConfigMap agent-settings absente,0.5,0.0,,"## Réponse courte
+
+**Je ne peux pas confirmer de problème sur `svc-08` : rien dans les données fournies ne le concerne.**
+
+## Ce que montre le relevé
+
+- Aucun événement ne mentionne `svc-08`, que ce soit pour le Deployment, un ReplicaSet ou un pod.
+- La sortie de `kubectl get deployments,replicasets,pods,...` n'affiche **que le PVC `agent-data`**. Aucun Deployment, pod ou Service n'apparaît, `svc-08` compris. Soit la sortie est tronquée, soit `svc-08` n'existe pas (ou plus) dans ce namespace.
+
+Sans état ni événement pour ce déploiement, toute cause que j'annoncerais serait inventée.
+
+## Pour vérifier
+
+```bash
+kubectl get deployment svc-08 -n aikube-agent2 -o wide
+kubectl describe deployment svc-08 -n aikube-agent2
+kubectl get rs,pods -n aikube-agent2 -l app=svc-08
+kubectl get events -n aikube-agent2 --field-selector involvedObject.name=svc-08
+kubectl logs deploy/svc-08 -n aikube-agent2 --previous
+```
+
+Si le Deployment n'existe pas (`NotFound`), vérifiez le nom exact ou le namespace avec `kubectl get deploy -A | grep svc-08`.
+
+## Problèmes réellement observés (sur d'autres workloads)
+
+Si vous avez confondu un numéro, voici ce que montrent les événements :
+
+| Workload | Problème | Cause |
+|---|---|---|
+| `svc-05` | `ImagePullBackOff` | Tag inexistant `busybox:9.99` (`manifest unknown`). Corriger vers un tag valide, par exemple `busybox:1.36`. |
+| `svc-01` | Pod non planifiable | Le PVC `agent-data` est `Pending` : la StorageClass `fast-ssd` n'existe pas (seule `standard` existe). Utiliser `storageClassName: standard` ou créer `fast-ssd`. |
+| `svc-03` | `BackOff` au redémarrage du conteneur | Le conteneur plante après démarrage. Voir `kubectl logs --previous`. |
+| `svc-09` | `Insufficient cpu` | Les requests CPU demandées dépassent ce qui est libre. Réduire les requests. |
+| `svc-01`, `svc-02`, `svc-03` | Erreurs `etcdserver: request timed out` | Probablement liées à la surcharge de l'hôte (charge 18 sur 4 cœurs), donc transitoires. |
+
+Si vous m'envoyez la sortie de `kubectl describe deployment svc-08 -n aikube-agent2`, je pourrai vous donner la cause exacte."
+v2,probe,chat-claude-obs,1,readinessProbe sur le port 8081 au lieu de 80,0.0,0.0,,"## Le déploiement `svc-04` n'apparaît pas dans le namespace `aikube-agent2`
+
+Dans la sortie fournie, il n'y a ni Deployment, ni ReplicaSet, ni Pod `svc-04`, et aucun événement ne le mentionne. Je ne peux donc diagnostiquer aucun problème sur lui. Les déploiements présents sont `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`. `svc-06` et `svc-08` sont absents aussi.
+
+### Pistes de vérification
+```bash
+# Existe-t-il quelque part ?
+kubectl get deploy svc-04 -n aikube-agent2
+kubectl get deploy -A | grep svc-04
+
+# A-t-il été créé puis supprimé ou rejeté ?
+kubectl get events -n aikube-agent2 | grep svc-04
+```
+Causes probables :
+- le déploiement n'a jamais été créé, car l'API a renvoyé des erreurs (voir plus bas) ;
+- il est dans un autre namespace ;
+- le nom est différent (faute de frappe, ou c'est un autre `svc-0X`).
+
+### Ce qu'on observe sur les autres déploiements
+- **`svc-05`** : `ImagePullBackOff`. L'image `busybox:9.99` n'existe pas. Corrigez avec `busybox:1.36`.
+- **`svc-01`** : `Pending`, car le PVC `agent-data` est non lié. Il référence la StorageClass `fast-ssd`, qui n'existe pas (seule `standard` existe). Corrigez avec `storageClassName: standard` ou créez `fast-ssd`.
+- **`svc-09`** : `Pending` pour `Insufficient cpu`. Ses requests CPU sont trop élevées, alors que 3100m à 3680m sont libres par nœud. Vérifiez la valeur demandée.
+- **`svc-03` et `svc-07`** : `CrashLoopBackOff`. Il faut consulter `kubectl logs --previous` et `kubectl describe pod`.
+- **Instabilité du control plane** : on voit des `etcdserver: request timed out`, des `connection refused` sur l'API et un `NodeNotReady`. Cela cadre avec la machine hôte surchargée (charge 17.98 sur 4 cœurs). Cette instabilité a pu faire échouer la création de certains objets, éventuellement `svc-04`. Réduisez la charge de l'hôte et vérifiez `kubectl get nodes`.
+
+Si vous me donnez le manifeste de `svc-04` ou le bon namespace, je pourrai l'analyser précisément."
+v2,service,chat-claude-obs,1,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",0.5,0.5,,"## Service `web-front` : introuvable dans ce namespace
+
+Dans le relevé de `aikube-agent2`, **aucun Service, aucun Endpoints et aucun Deployment nommé `web-front`** n'apparaît. La liste des Services est même vide. Je ne peux donc pas dire qu'il « pose problème », car il n'existe pas ici. Aucun événement ne le mentionne non plus.
+
+Pistes à vérifier :
+```bash
+kubectl get svc web-front -A          # existe-t-il dans un autre namespace (web, production, default…) ?
+kubectl get deploy,svc -n aikube-agent2 --show-labels
+```
+S'il devait être dans `aikube-agent2`, il n'a jamais été créé (ou a été supprimé). Il faut alors réappliquer son manifeste.
+
+## Problèmes réels dans `aikube-agent2`
+
+| Workload | Cause | Correction |
+|---|---|---|
+| **svc-05** (`ImagePullBackOff`) | Le tag `busybox:9.99` n'existe pas (`manifest unknown`). | `kubectl set image deploy/svc-05 app=busybox:1.36 -n aikube-agent2` |
+| **svc-01** (`Pending`) et PVC `agent-data` | La StorageClass `fast-ssd` n'existe pas, donc le PVC reste `Pending` et le pod est non planifiable. | Voir ci-dessous. |
+| **svc-09** (`Pending`) | `Insufficient cpu` : ses requests CPU dépassent ce qui est libre. Chaque nœud a pourtant 3,1 à 3,7 CPU libres. | Vérifier `kubectl get deploy svc-09 -n aikube-agent2 -o jsonpath='{..resources}'` et réduire les requests (max 3680m). |
+| **svc-03** et **svc-07** (`CrashLoopBackOff`) | Le conteneur démarre puis s'arrête. Les événements ne donnent pas la cause. | `kubectl logs <pod> -n aikube-agent2 --previous` et `kubectl describe pod`. |
+| **svc-02** | Le nœud `minikube-m02` est passé en `NotReady`. | Voir ci-dessous. |
+
+**Cause racine probable de l'instabilité (etcd timeout, connection refused, NodeNotReady) :** la machine hôte est surchargée (charge 18 pour 4 cœurs), et tous les pods tournent sur `minikube-m02`. Allégez l'hôte ou réduisez le nombre de workloads, puis vérifiez avec `kubectl get nodes`.
+
+**Correction du PVC** (`storageClassName` est immutable, il faut recréer le PVC) :
+```bash
+kubectl delete pvc agent-data -n aikube-agent2
+```
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data
+  namespace: aikube-agent2
+spec:
+  storageClassName: standard
+  accessModes: [""ReadWriteOnce""]
+  resources:
+    requests:
+      storage: 1Gi
+```
+Adaptez la taille à votre besoin (le manifeste d'origine n'est pas fourni). Utiliser `standard`, la StorageClass par défaut, évite de créer `fast-ssd`.
+
+Si vous me donnez les logs de svc-03/svc-07 ou le manifeste de `web-front`, je pourrai approfondir."
+v2,storage,chat-claude-obs,1,PVC sur une StorageClass inexistante,0.5,0.5,,"## Verdict : oui, svc-01 a un problème, mais la cause exacte n'est pas déterminable avec ces données
+
+**Ce qui est établi**
+- `svc-01` est à `0/1` (READY), `AVAILABLE 0`, alors que le ReplicaSet a bien créé 1 pod (`CURRENT 1`, `READY 0`). Le Deployment et le ReplicaSet fonctionnent, c'est donc le **pod** qui n'est pas prêt.
+- L'image `busybox:1.36` n'est probablement pas en cause : `svc-02` l'utilise et tourne en `1/1`. Ce n'est pas le cas de `svc-05` (`busybox:9.99`, tag inexistant), qui est un problème distinct.
+
+**Ce qui manque**
+- Le `kubectl get` n'a pas affiché les pods, services ni endpoints.
+- `kubectl get events` a échoué (`connection reset by peer`). L'API server local est instable, probablement à cause de la charge de la machine hôte (17.89 sur 4 cœurs).
+
+Sans le statut du pod (`Pending`, `CrashLoopBackOff`, `Running` mais non Ready…) ni les événements, toute cause que j'avancerais serait une supposition.
+
+## Hypothèses possibles (à confirmer)
+| Statut du pod | Cause probable |
+|---|---|
+| `Pending` | Requests CPU/mémoire trop élevées, nœud non planifiable, ressources de l'hôte saturées |
+| `CrashLoopBackOff` / `Completed` | busybox sans `command` longue durée : le conteneur se termine immédiatement |
+| `Running` mais `0/1` | `readinessProbe` qui échoue (mauvais port, chemin ou commande) |
+| `ContainerCreating` bloqué | Volume, ConfigMap ou Secret manquant |
+
+## Commandes pour trancher
+```bash
+kubectl get pods -n aikube-agent2 -l app=svc-01 -o wide
+kubectl describe pod -n aikube-agent2 -l app=svc-01
+kubectl logs -n aikube-agent2 -l app=svc-01 --previous --tail=50
+kubectl get deploy svc-01 -n aikube-agent2 -o yaml
+```
+Si l'API continue de reset les connexions, vérifiez d'abord l'état du cluster (`minikube status`) et réduisez la charge de l'hôte, avant de relancer ces commandes.
+
+## Corrections selon la cause
+- **Le conteneur se termine aussitôt** : donnez-lui une commande persistante.
+```yaml
+containers:
+- name: app
+  image: busybox:1.36
+  command: [""sh"", ""-c"", ""while true; do sleep 3600; done""]
+```
+- **Probe en échec** : corrigez le port, le chemin ou la commande de la `readinessProbe`, ou supprimez-la si elle n'a pas de sens pour busybox.
+- **Pending pour manque de ressources** : baissez les `requests` ou libérez de la capacité sur le nœud.
+
+Envoyez-moi la sortie de `describe pod` et des logs de `svc-01`, et je vous donnerai la cause exacte et le correctif précis."
+v2,healthy,chat-claude-obs,1,aucune panne (témoin),1.0,1.0,,"## Verdict : svc-02 ne pose pas de problème actuellement
+
+| Élément | État |
+|---|---|
+| Deployment | `1/1` READY, `1` UP-TO-DATE, `1` AVAILABLE |
+| ReplicaSet `svc-02-57b8b798fd` | desired 1, current 1, ready 1 |
+| Pod `svc-02-57b8b798fd-sph5v` | `Running`, 0 restart, sur `minikube-m02` |
+
+## Les warnings dans les événements sont transitoires
+
+Ils datent du démarrage, il y a 13 à 15 minutes, et sont tous liés à l'instabilité de l'API server et d'etcd :
+
+- `ReplicaSetCreateError` et `FailedCreate` : `etcdserver: request timed out` et `resource quota evaluation timed out`.
+- `FailedScheduling` sur `svc-02-…-sph5v` : `Bind plugin ""DefaultBinder"" … etcdserver: request timed out`.
+- `FailedMount` sur `svc-02-…-89886` : c'est un ancien pod, qui n'existe plus. Le ReplicaSet l'a remplacé par `sph5v`.
+- `NodeNotReady` il y a ~6 min : événement ponctuel. Le pod est actuellement `Running` et `Ready`.
+
+**Cause racine de ce bruit :** la machine hôte est surchargée (load 19,13 sur 4 cœurs, pic à 20,91). Le cluster minikube tourne dessus, donc etcd et l'API server ont des timeouts, et le nœud `minikube-m02` a pu passer brièvement en `NotReady`. Le Deployment `svc-02` n'est pas en cause : sa configuration est correcte, l'image `busybox:1.36` est présente et le conteneur démarre.
+
+## Vérifications recommandées
+
+Le `NodeNotReady` est récent, donc il vaut mieux confirmer que le nœud est stable :
+
+```bash
+kubectl get nodes
+kubectl describe pod svc-02-57b8b798fd-sph5v -n aikube-agent2
+kubectl get pod -n aikube-agent2 -l app=svc-02 -w
+```
+
+Si le nœud reste `NotReady` ou si le pod bascule en `Unknown` ou `Terminating`, le problème viendra de la charge de l'hôte. Il faut alors réduire cette charge : arrêter les autres processus, ou réduire ou supprimer les workloads en échec du namespace.
+
+## Autres deployments du namespace
+
+Ils sont en échec pour des raisons distinctes, sans lien avec svc-02 :
+
+- **svc-01** : PVC `agent-data` en `Pending`, car la StorageClass `fast-ssd` n'existe pas (seule `standard` existe).
+- **svc-05** : l'image `busybox:9.99` n'existe pas.
+- **svc-09** : `Insufficient cpu`.
+- **svc-03 et svc-07** : `CrashLoopBackOff`, à diagnostiquer avec `kubectl logs --previous`.
+
+Je peux détailler la correction de l'un d'eux si vous le souhaitez."
+v2,image,chat-claude-obs,2,tag d'image inexistant,1.0,1.0,,"# Diagnostic de `svc-05`
+
+**Oui, il y a un problème.** Le pod `svc-05-554d5c5866-mh5fn` est en `ImagePullBackOff` et le déploiement reste à 0/1 depuis 19 min.
+
+## Cause exacte
+
+Le déploiement référence une image dont le tag n'existe pas : **`busybox:9.99`**.
+
+L'événement le confirme :
+```
+Failed to pull image ""busybox:9.99"": ... manifest for busybox:9.99 not found: manifest unknown
+```
+
+Le pod a bien été planifié sur `minikube-m02`, donc le problème ne vient ni du scheduling ni des ressources. Le kubelet n'arrive pas à récupérer l'image, puis passe en back-off.
+
+Le premier échec, `Client.Timeout exceeded` vers `registry-1.docker.io`, est un incident réseau transitoire. Il est probablement lié à la forte charge de l'hôte (20.57 sur 4 cœurs). Il n'est pas la cause du blocage actuel : même sans timeout, ce tag ne se téléchargerait pas.
+
+## Correction
+
+Utilise un tag existant. Les autres déploiements utilisent `busybox:1.36`, déjà présent sur le nœud :
+
+```bash
+kubectl set image deployment/svc-05 app=busybox:1.36 -n aikube-agent2
+kubectl rollout status deployment/svc-05 -n aikube-agent2
+```
+
+Ou, de façon déclarative, dans le manifeste :
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+```
+
+## Point d'attention
+
+`svc-03` utilise aussi `busybox:1.36` et est en `CrashLoopBackOff`. Une fois l'image corrigée, `svc-05` peut avoir le même sort si le conteneur n'a pas de commande qui reste active, car busybox quitte immédiatement sans processus au premier plan. Vérifie le spec avec :
+
+```bash
+kubectl get deployment svc-05 -n aikube-agent2 -o yaml
+```
+
+Si besoin, ajoute une commande longue durée :
+
+```yaml
+command: [""sh"", ""-c"", ""while true; do sleep 3600; done""]
+```
+
+## Remarque
+
+Les autres déploiements du namespace ont des problèmes distincts, sans lien avec `svc-05` : PVC `agent-data` en attente car la StorageClass `fast-ssd` n'existe pas, `Insufficient cpu`, timeouts etcd et crashs applicatifs."
+v2,crash,chat-claude-obs,2,variable DATABASE_URL manquante → exit 1,0.5,0.5,,"## Verdict
+
+Oui, `svc-03` a un problème : son pod `svc-03-577cbf7ddc-k8tmx` est en **CrashLoopBackOff** (6 redémarrages, 0/1 prêt).
+
+## Ce que les données permettent d'exclure
+
+- **Ordonnancement** : le pod est bien assigné à `minikube-m02`.
+- **Image** : `busybox:1.36` est présente (`already present on machine`).
+- **Création** : le conteneur est créé et démarré (`Created`, `Started`), puis il s'arrête, d'où le `BackOff`.
+- **Stockage** : `svc-03` n'est pas concerné par le PVC `agent-data` (Pending, StorageClass `fast-ssd` inexistante). Ce problème touche `svc-01`.
+
+Le conteneur démarre donc, mais **son processus principal se termine** et kubelet le relance en boucle.
+
+## Cause exacte : non déterminable avec ces seules données
+
+Les événements n'indiquent ni le code de sortie, ni les logs, ni la commande du conteneur. Je ne peux donc pas affirmer la cause exacte sans les inventer.
+
+L'hypothèse la plus probable est un conteneur `busybox` sans commande longue durée. Sans `command`, `busybox` lance `sh`, qui quitte immédiatement faute de stdin (exit 0). `svc-02` utilise la même image et tourne correctement, donc sa spec contient vraisemblablement une commande qui boucle. À vérifier dans celle de `svc-03`.
+
+## Pour confirmer
+
+```bash
+kubectl logs svc-03-577cbf7ddc-k8tmx -n aikube-agent2 --previous
+kubectl describe pod svc-03-577cbf7ddc-k8tmx -n aikube-agent2   # Last State : Exit Code, Reason
+kubectl get deploy svc-03 -n aikube-agent2 -o yaml              # command / args / env / probes
+```
+
+Interprétation du code de sortie :
+- **0** : le process finit normalement. Il faut une commande qui reste au premier plan.
+- **1 ou 2** : erreur applicative. Les logs donnent la cause (variable manquante, fichier absent, mauvaise commande…).
+- **137** : OOMKilled ou kill par une probe. Vérifier les `limits` mémoire et les `livenessProbe`.
+
+## Correction si c'est un conteneur qui sort aussitôt
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command: [""sh"", ""-c"", ""while true; do sleep 3600; done""]
+```
+
+Ou en patch direct :
+
+```bash
+kubectl patch deploy svc-03 -n aikube-agent2 --type=json -p='[
+  {""op"":""add"",""path"":""/spec/template/spec/containers/0/command"",
+   ""value"":[""sh"",""-c"",""while true; do sleep 3600; done""]}]'
+```
+
+Si les logs montrent une autre erreur, corrigez la commande ou la configuration en conséquence.
+
+## Contexte aggravant
+
+La machine hôte est surchargée (charge 21 sur 4 cœurs). On le voit dans les `etcdserver: request timed out`, le `connection refused` sur l'API et le `NodeNotReady` de `minikube-m02`, où tournent tous les pods en erreur. Cela explique l'instabilité générale du namespace, mais pas à lui seul le crash de `svc-03`. Une fois la cause corrigée, allégez la charge de l'hôte pour obtenir un état stable."
+v2,oom,chat-claude-obs,2,"OOMKilled, limite 48Mi trop basse",1.0,0.5,,"## Oui, svc-07 a un problème
+
+Le pod `svc-07-7ff9bc6776-9x87x` est en **CrashLoopBackOff** (6 redémarrages, 0/1 prêt). Il est bien planifié sur `minikube-m02`, l'image `python:3.12-alpine` est présente et le conteneur est créé puis démarré. Le conteneur **démarre puis s'arrête de lui-même**, et kubelet applique un back-off croissant.
+
+## Cause exacte : non déterminable avec ces sorties
+
+Ni le code de sortie, ni les logs, ni le `command`/`args` du Deployment ne figurent dans ce que vous avez relevé. Les événements montrent seulement `Started` puis `BackOff`. Je ne peux donc pas affirmer la cause, seulement la plus probable.
+
+**Hypothèse n°1 : aucune commande longue durée n'est définie.** L'image `python:3.12-alpine` lance par défaut l'interpréteur `python3`. Sans TTY ni stdin, il quitte immédiatement avec le code 0. Kubernetes considère alors que le conteneur a terminé et le relance en boucle.
+
+Les autres causes possibles sont un script ou une commande qui échoue (code 1), un OOMKill (code 137) ou une probe liveness qui tue le conteneur.
+
+## Pour confirmer
+
+```bash
+kubectl describe pod svc-07-7ff9bc6776-9x87x -n aikube-agent2
+# → section ""Last State: Terminated"", Reason, Exit Code, + Command/Args
+
+kubectl logs svc-07-7ff9bc6776-9x87x -n aikube-agent2 --previous
+
+kubectl get deployment svc-07 -n aikube-agent2 -o yaml
+```
+
+Interprétation du code de sortie :
+
+| Exit Code | Signification |
+|---|---|
+| 0 | Le processus se termine normalement, il n'y a pas de processus au premier plan (hypothèse n°1) |
+| 1 ou autre | Erreur applicative, voir les logs `--previous` |
+| 137 | OOMKilled ou kill par une probe, vérifier `Reason` et les limits mémoire |
+
+## Correction (si l'hypothèse n°1 se confirme)
+
+Donnez au conteneur un processus qui reste au premier plan. Exemple avec un serveur HTTP simple :
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-07
+  namespace: aikube-agent2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc-07
+  template:
+    metadata:
+      labels:
+        app: svc-07
+    spec:
+      containers:
+        - name: app
+          image: python:3.12-alpine
+          command: [""python"", ""-m"", ""http.server"", ""8000""]
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+```
+
+Remplacez la commande par celle de votre vraie application. Si le conteneur échoue pour une autre raison, la correction dépendra de ce que montrent les logs et le code de sortie.
+
+## Contexte
+
+Le cluster est instable : timeouts etcd, `NodeNotReady` sur `minikube-m02` et machine hôte surchargée. Cela explique plusieurs autres anomalies du namespace (`svc-01`, `svc-02`, `svc-09`), mais pas le crash de svc-07. Le conteneur a bien démarré, donc le problème vient du conteneur lui-même. Si le nœud `minikube-m02` reste instable, vérifiez-le en parallèle avec `kubectl describe node minikube-m02`."
+v2,pending,chat-claude-obs,2,request de 64 CPU impossible,1.0,1.0,,"## Oui, svc-09 pose un problème
+
+**Cause visible dans les événements :** le pod `svc-09-57d99b785d-qqrpf` reste `Pending` :
+
+```
+0/3 nodes are available: 3 Insufficient cpu. preemption: ... No preemption victims found
+```
+
+Les **CPU `requests`** du pod dépassent la capacité CPU libre (allocatable − requests déjà réservées) sur **chacun des 3 nœuds**. La préemption n'aide pas, car aucun pod de priorité inférieure ne peut être évincé.
+
+L'événement plus ancien (`connection refused` sur 192.168.49.2:8443) n'est pas la cause : c'est une indisponibilité temporaire de l'API server, après laquelle le pod a bien été créé (`SuccessfulCreate`).
+
+## Ce que je ne peux pas affirmer
+
+- Le `kubectl get` a expiré, donc je n'ai ni la valeur exacte de `resources.requests.cpu` de svc-09, ni l'état actuel du pod.
+- Les informations de capacité libre par nœud sont vides (0 nœud planifiable), donc je ne peux pas chiffrer l'écart.
+- Le cluster est instable : timeouts etcd, `NodeNotReady`, hôte WSL2 surchargé (charge 19 sur 4 cœurs). L'aggravation est probablement due à cette surcharge, mais ce n'est pas la cause du `Insufficient cpu`.
+
+## Vérifications
+
+```bash
+kubectl get deploy svc-09 -n aikube-agent2 -o jsonpath='{.spec.template.spec.containers[*].resources}'
+kubectl describe pod -n aikube-agent2 -l app=svc-09     # adapter le label
+kubectl describe nodes | grep -A8 ""Allocated resources""
+kubectl get pods -A -o wide --field-selector=status.phase=Pending
+```
+
+## Corrections
+
+1. **Réduire la requête CPU** de svc-09 (cas le plus probable) :
+
+```bash
+kubectl patch deployment svc-09 -n aikube-agent2 --type=json -p='[
+  {""op"":""replace"",""path"":""/spec/template/spec/containers/0/resources/requests/cpu"",""value"":""100m""}
+]'
+```
+
+   Ou, de façon déclarative :
+
+```yaml
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+```
+
+2. **Libérer du CPU réservé** : mettre à l'échelle à 0 ou supprimer les déploiements en échec qui occupent des requests inutilement, comme `svc-05` (image `busybox:9.99` inexistante) ou `svc-03` et `svc-07` (en `BackOff`).
+
+3. **Alléger l'hôte** : avec 4 cœurs partagés par 3 nœuds minikube, la marge est faible. Fermez les processus gourmands de la machine hôte avant de relancer, sinon les timeouts etcd continueront.
+
+Une fois la requête corrigée, `kubectl rollout status deploy/svc-09 -n aikube-agent2` confirmera le placement. Si le pod reste `Pending`, renvoyez-moi la sortie du `describe pod` et des `Allocated resources` pour un diagnostic chiffré."
+v2,selector,chat-claude-obs,2,nodeSelector sans nœud correspondant,0.5,0.5,,"## svc-06 n'apparaît pas dans le relevé
+
+Le déploiement **svc-06 n'existe pas** dans la sortie fournie pour `aikube-agent2`. Il y a svc-01, 02, 03, 05, 07 et 09, mais ni deployment, ni ReplicaSet, ni pod svc-06. Je ne peux donc pas dire qu'il pose un problème ni en donner la cause.
+
+Quelques explications possibles :
+- il n'a jamais été créé (échec d'un `kubectl apply`, manifeste oublié) ;
+- il a été supprimé ;
+- il se trouve dans un autre namespace ;
+- le nom est différent (faute de frappe, autre suffixe).
+
+Pour vérifier :
+```bash
+kubectl get deploy svc-06 -n aikube-agent2
+kubectl get deploy -A | grep svc-06
+kubectl get all -n aikube-agent2 -l app=svc-06
+```
+
+## Les déploiements qui posent problème
+
+| Déploiement | État | Cause probable |
+|---|---|---|
+| svc-05 | `ImagePullBackOff` | Le tag `busybox:9.99` n'existe pas. Corriger avec une version valide, par exemple `busybox:1.36`. |
+| svc-03, svc-07 | `CrashLoopBackOff` | Cause inconnue sans les logs. Voir `kubectl logs <pod> --previous` et `kubectl describe pod`. |
+| svc-01, svc-09 | `Pending` | Pod non planifié, probablement un manque de ressources ou une contrainte de scheduling. Voir la section `Events` de `kubectl describe pod`. |
+
+Pour svc-05, la correction est :
+```bash
+kubectl set image deployment/svc-05 app=busybox:1.36 -n aikube-agent2
+```
+
+## Remarque sur la commande events
+
+L'erreur `connection reset by peer` sur l'API server est probablement liée à la surcharge de la machine hôte (charge de 18.78 sur 4 cœurs). Elle peut aussi expliquer l'instabilité du cluster, avec des pods Pending et des redémarrages. Réessaie `kubectl get events` quand la charge a baissé, ou réduis le nombre de workloads.
+
+Si tu voulais parler d'un autre déploiement, ou si svc-06 est censé exister, envoie-moi le résultat de `kubectl get deploy -A | grep svc-06` ou son manifeste."
+v2,config,chat-claude-obs,2,ConfigMap agent-settings absente,0.5,0.5,,"## svc-08 n'existe pas dans le namespace
+
+Dans le relevé, aucun Deployment, ReplicaSet ni Pod `svc-08` n'apparaît dans `aikube-agent2`. Il y a svc-01, 02, 03, 05, 07 et 09, mais pas 08. Il n'y a donc aucun problème observable sur svc-08, puisqu'il n'est pas déployé.
+
+### Causes possibles de son absence
+- **Création jamais aboutie.** Les événements montrent une API instable : `etcdserver: request timed out`, `connection refused` sur le port 8443 et `resource quota evaluation timed out`. Un `kubectl apply` a pu échouer pour svc-08 sans laisser de trace.
+- **Mauvais namespace**, ou manifeste jamais appliqué.
+- **Suppression** du Deployment.
+
+### Vérifications
+```bash
+kubectl get deploy svc-08 -n aikube-agent2
+kubectl get deploy -A | grep svc-08
+kubectl get events -n aikube-agent2 | grep svc-08
+```
+Si le manifeste existe, réappliquez-le avec `kubectl apply -f <fichier> -n aikube-agent2`. Attendez d'abord que l'API soit stable (voir ci-dessous).
+
+### Les autres déploiements du namespace
+| Déploiement | Cause |
+|---|---|
+| **svc-01** | Pod Pending : PVC `agent-data` non lié, car la StorageClass `fast-ssd` n'existe pas (seule `standard` existe). |
+| **svc-05** | `busybox:9.99` n'existe pas (`manifest unknown`). Utilisez `busybox:1.36`. |
+| **svc-07** | `OOMKilled` : la limite mémoire du conteneur est trop basse. |
+| **svc-09** | Pending : `Insufficient cpu`. Les requests CPU dépassent ce qui est disponible, alors que 3680m maximum sont plaçables sur un nœud. |
+| **svc-03** | Conteneur en `Error` avec redémarrages. Vérifiez avec `kubectl logs svc-03-577cbf7ddc-k8tmx -n aikube-agent2 --previous`. |
+| **svc-02** | Running, mais l'événement `NodeNotReady` a été signalé. |
+
+### Contexte
+La machine hôte est surchargée (charge 18,5 sur 4 cœurs), ce qui explique probablement les timeouts etcd et le `NodeNotReady`. Réduisez la charge de l'hôte avant de corriger les déploiements, sinon de nouveaux échecs de création sont à prévoir.
+
+Si vous avez le manifeste de svc-08 ou un autre namespace en tête, envoyez-le-moi et je l'analyse."
+v2,probe,chat-claude-obs,2,readinessProbe sur le port 8081 au lieu de 80,0.0,0.0,,"## Réponse courte
+
+**Le déploiement `svc-04` n'existe pas dans `aikube-agent2`**, donc il ne peut pas y poser de problème. Il n'apparaît ni dans les Deployments, ni dans les ReplicaSets, ni dans les Pods, ni dans les événements. Les deployments présents sont `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`.
+
+## Vérifications possibles
+
+```bash
+kubectl get deploy svc-04 -n aikube-agent2
+kubectl get deploy -A | grep svc-04
+kubectl get events -n aikube-agent2 | grep svc-04
+```
+
+- Il peut s'agir d'une erreur de nom (par exemple `svc-03` ou `svc-05`).
+- Il a pu ne jamais être créé. Au moment de la création, l'API a renvoyé des erreurs `etcdserver: request timed out` et `connection refused`, qui ont pu faire échouer l'`apply`.
+- Il a pu être supprimé, ou être dans un autre namespace.
+
+Si le manifeste existe, relancez `kubectl apply -f` et vérifiez qu'il cible bien le namespace `aikube-agent2`.
+
+## Problèmes constatés sur les autres deployments
+
+| Deployment | Cause | Correction |
+|---|---|---|
+| `svc-05` | Le tag `busybox:9.99` n'existe pas (`manifest unknown`). | `kubectl set image deploy/svc-05 app=busybox:1.36 -n aikube-agent2` |
+| `svc-01` | Le PVC `agent-data` est `Pending` car la StorageClass `fast-ssd` n'existe pas. Seule `standard` existe. | Recréer le PVC avec `storageClassName: standard` (ce champ est immuable, il faut donc supprimer puis recréer le PVC). |
+| `svc-09` | `Insufficient cpu` sur les 3 nœuds. Ça ressemble à des requests trop élevées, ou à un événement survenu pendant la surcharge (événement vieux de 15 min). | Vérifier ses requests avec `kubectl describe pod`. Les nœuds ont 3,1 à 3,7 CPU libres. |
+| `svc-03`, `svc-07` | `CrashLoopBackOff`, cause non visible ici. | `kubectl logs <pod> --previous -n aikube-agent2` |
+
+L'hôte est très surchargé (charge de 18 sur 4 cœurs), ce qui explique les timeouts etcd et les erreurs de l'API. Une partie de ces symptômes peut disparaître une fois la charge réduite."
+v2,service,chat-claude-obs,2,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",0.5,0.5,,"## Réponse courte
+
+**Le service `web-front` n'existe pas dans `aikube-agent2`** d'après l'état relevé. Il n'y a aucun Service ni Endpoints dans la sortie, et aucun Deployment, pod ou événement ne mentionne `web-front`. Je ne peux donc pas diagnostiquer un problème sur ce service.
+
+Vérifications possibles :
+
+```bash
+kubectl get svc web-front -n aikube-agent2
+kubectl get svc -A | grep web-front
+```
+
+Il existe un namespace `web`, où `web-front` se trouve peut-être. Si c'est le cas, donne-moi son état (`kubectl get svc,endpoints,pods -n web`).
+
+## Problèmes réellement présents dans `aikube-agent2`
+
+| Workload | Symptôme | Cause (d'après les événements) | Correction |
+|---|---|---|---|
+| **svc-01** | Pending | PVC `agent-data` non lié : la StorageClass `fast-ssd` n'existe pas (seule `standard` existe) | Recréer le PVC avec `standard` (voir ci-dessous) |
+| **svc-05** | ImagePullBackOff | Le tag `busybox:9.99` n'existe pas (`manifest unknown`) | Utiliser `busybox:1.36` |
+| **svc-09** | Pending | `Insufficient cpu` sur les 3 nœuds. Les requests CPU du pod semblent trop élevées (événement ancien, à revérifier) | `kubectl describe pod` pour voir les requests, puis les réduire (max plaçable : 3680m) |
+| **svc-03, svc-07** | CrashLoopBackOff | Cause non visible dans ces données | `kubectl logs <pod> --previous -n aikube-agent2` et `kubectl describe pod` |
+| **svc-02** | Running | Événement `NodeNotReady` sur minikube-m02 il y a ~8 min | À surveiller |
+
+Correction du PVC (`storageClassName` est immuable, il faut supprimer puis recréer) :
+
+```bash
+kubectl delete pvc agent-data -n aikube-agent2
+```
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data
+  namespace: aikube-agent2
+spec:
+  accessModes: [""ReadWriteOnce""]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi   # adapter à la taille d'origine
+```
+
+Correction de l'image de svc-05 :
+
+```bash
+kubectl set image deployment/svc-05 app=busybox:1.36 -n aikube-agent2
+```
+
+## Instabilité du cluster
+
+Les nombreux `etcdserver: request timed out`, le `connection refused` sur l'API server et le `NodeNotReady` indiquent un control plane qui souffre. La machine hôte est surchargée (charge 17,56 sur 4 cœurs, pic à 21,38). Ces erreurs sont probablement transitoires et liées à cette charge, pas à vos manifestes. Allège l'hôte (arrêter des processus ou des workloads inutiles, allouer plus de CPU à WSL2) avant de conclure sur les autres pannes."
+v2,storage,chat-claude-obs,2,PVC sur une StorageClass inexistante,1.0,0.5,,"## Réponse courte
+
+Je ne peux pas dire si `svc-01` pose un problème : les relevés ne contiennent aucune donnée sur lui. Les deux commandes ont échoué avant de renvoyer quoi que ce soit :
+
+- `kubectl get ...` : timeout après 60 s
+- `kubectl get events` : `etcdserver: request timed out`
+
+Le problème observé est au niveau du **cluster**, pas du déploiement.
+
+## Ce que montrent les indices
+
+- **etcd ne répond pas dans les délais.** L'API server ne peut ni lire ni écrire l'état du cluster.
+- **La machine hôte est saturée.** La charge est de 18,47 sur 4 cœurs, avec un pic à 21,38 (plus de 5 par cœur). Sur minikube/WSL2, etcd est très sensible à la latence CPU et disque, et ce type de timeout est typique d'une surcharge.
+- **Le contexte du cluster est incomplet.** Il indique 0 nœud planifiable et aucune capacité par nœud. Cela concorde avec une API qui répond mal ou des nœuds `NotReady`, mais je ne peux pas le confirmer.
+
+Si `svc-01` est en erreur (pods `Pending`, `CrashLoopBackOff`, etc.), cela peut être une conséquence de cette instabilité. Je ne peux pas l'affirmer.
+
+## Comment corriger
+
+**1. Réduire la charge de l'hôte**
+```bash
+top -o %CPU            # identifier les processus gourmands
+minikube status
+```
+Arrêtez les workloads ou les processus inutiles. Si besoin, redémarrez WSL depuis Windows avec `wsl --shutdown`, puis relancez minikube.
+
+**2. Vérifier la santé de l'API et d'etcd**
+```bash
+kubectl get --raw='/readyz?verbose' --request-timeout=30s
+minikube ssh -- ""sudo crictl ps | grep -E 'etcd|apiserver'""
+minikube logs | grep -iE ""etcd|slow|timeout"" | tail -50
+```
+Des messages `apply request took too long` ou `slow fdatasync` confirment un problème de latence.
+
+**3. Redémarrer si nécessaire**
+```bash
+minikube stop && minikube start
+```
+Si vous utilisez minikube, donnez-lui des ressources adaptées (`--cpus`, `--memory`), sans dépasser ce que l'hôte peut fournir.
+
+**4. Une fois l'API stable, diagnostiquer `svc-01`**
+```bash
+kubectl get deploy,rs,pods,svc,endpoints,pvc -n aikube-agent2 -o wide --request-timeout=30s
+kubectl describe deployment svc-01 -n aikube-agent2
+kubectl rollout status deployment/svc-01 -n aikube-agent2
+kubectl get events -n aikube-agent2 --sort-by=.lastTimestamp
+kubectl describe pod -l app=svc-01 -n aikube-agent2
+kubectl logs deploy/svc-01 -n aikube-agent2 --previous
+```
+
+Si vous me renvoyez ces sorties, je pourrai identifier la cause exacte, par exemple :
+- requests supérieures à ce qui est planifiable
+- PVC `Pending`, car il n'y a aucune StorageClass
+- image introuvable
+- selector de Service ou labels incohérents
+- probes en échec"
+v2,healthy,chat-claude-obs,2,aucune panne (témoin),0.0,0.0,,"# Diagnostic de svc-02 (aikube-agent2)
+
+**Je ne peux pas déterminer si svc-02 pose un problème, ni sa cause.** Les deux commandes ont échoué, donc je n'ai aucune donnée sur le Deployment, ses ReplicaSets, ses Pods ou ses événements. Je préfère ne pas inventer une cause.
+
+## Ce que les échecs indiquent
+
+- `timed out after 60 seconds` et `malformed header: missing HTTP content-type` sont des symptômes d'un **API server (ou de son proxy/etcd) qui ne répond pas correctement**.
+- La machine hôte est **très surchargée** : charge de 22 sur 4 cœurs, soit plus de 5 par cœur. C'est une cause probable de ces lenteurs. Sous WSL2 avec minikube, l'API server et etcd saturent facilement dans ce cas.
+- Le contexte indique aussi **0 nœud planifiable**. Si c'est exact, aucun Pod ne peut être planifié et svc-02 resterait `Pending`. Je ne peux pas le confirmer pour svc-02 sans les données du namespace, donc c'est une piste et non une conclusion.
+
+## Pour avancer
+
+1. Vérifier la santé du cluster :
+```bash
+minikube status
+kubectl get nodes
+kubectl get --raw='/readyz?verbose' | tail -20
+```
+2. Identifier ce qui sature l'hôte (`top`, `docker stats`) et libérer de la charge. Si besoin, redémarrer : `minikube stop && minikube start`.
+3. Une fois l'API stable, interroger uniquement svc-02, avec des requêtes plus légères :
+```bash
+kubectl -n aikube-agent2 get deploy svc-02 -o wide
+kubectl -n aikube-agent2 describe deploy svc-02
+kubectl -n aikube-agent2 get pods -l app=svc-02   # adapter le label
+kubectl -n aikube-agent2 describe pod <pod>        # section Events
+kubectl -n aikube-agent2 logs <pod> --previous
+```
+4. Si les nœuds sont `NotReady` ou absents :
+```bash
+kubectl describe node <nœud>
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"" ""}{.spec.unschedulable}{"" ""}{.spec.taints}{""\n""}{end}'
+```
+Si un nœud est cordonné, `kubectl uncordon <nœud>` le rend de nouveau planifiable.
+
+Quand vous aurez la sortie de `describe deploy` et des événements du Pod, je pourrai identifier la cause exacte et proposer le correctif."
+v2,image,agent,3,tag d'image inexistant,0.0,0.0,,"**Diagnostic** — Je n'ai pas pu examiner le déploiement `svc-05`, donc je ne peux pas dire s'il a un problème. L'API server du cluster (127.0.0.1:1185) ne répond pas de façon fiable. Cela vient très probablement de la surcharge CPU de la machine hôte, qui fait tomber les connexions avant que je lise quoi que ce soit.
+
+**Preuves**
+- Tous mes appels kubectl ont échoué, sur plusieurs tentatives et avec plusieurs types de requêtes (deployments, pods, events, describe, `list_problems`). Les erreurs étaient `connection reset by peer`, ou `TLS handshake timeout` pour certaines.
+- `host_load_history` (19:55 à 20:30 UTC) montre une charge moyenne de 18 à 20 sur 4 cœurs, avec un pic à 22,17 à 20:33. Cela fait environ 5 par cœur, alors que le seuil de surcharge est 1,5.
+- La RAM disponible reste correcte, à environ 9,5 Gio minimum. Le manque est donc en CPU, pas en mémoire.
+- La surcharge dure sur toute la fenêtre, ce n'est pas un pic isolé. Un API server et un etcd qui manquent de CPU répondent trop lentement et coupent les connexions.
+
+**Correction proposée**
+Il faut d'abord rendre l'API server de nouveau joignable. Ces commandes ne modifient rien dans le cluster :
+```
+# 1. Identifier ce qui consomme le CPU sur l'hôte
+top -o %CPU          # ou: ps aux --sort=-%cpu | head -20
+# 2. Vérifier l'état du cluster local
+minikube status      # ou: kind get clusters / docker ps
+```
+- Arrêtez ou réduisez les charges non essentielles sur la machine.
+- Si le cluster est minikube, augmentez ses ressources. Cela impose de recréer ou redémarrer le cluster, donc à ne faire que si vous acceptez une coupure : `minikube stop && minikube start --cpus=4`.
+- Quand l'API répond de nouveau, relancez-moi. Je pourrai alors vérifier `svc-05` (état des pods, événements, logs précédents) et trouver la cause exacte.
+
+**Certitude** — Faible pour `svc-05`, car je n'ai aucune donnée sur lui. Elle est moyenne à élevée pour l'indisponibilité de l'API, causée par le manque de CPU de l'hôte. Pour le confirmer, il faudrait voir les logs de l'API server ou d'etcd, avec des lectures lentes sans `slow fdatasync`, ou voir les erreurs disparaître quand la charge baisse."
+v2,image,chat-claude,3,tag d'image inexistant,1.0,0.0,,"Je ne peux pas me prononcer sur `svc-05` : je n'ai pas accès au cluster depuis cette conversation, donc je n'ai ni son manifeste, ni l'état de ses pods, ni ses événements. Annoncer une cause exacte serait de l'invention.
+
+## Ce que montre le contexte
+- **Nœuds planifiables : 0** et version du serveur **inconnue**. Soit le cluster minikube est arrêté ou injoignable, soit aucun nœud n'est `Ready`. Dans les deux cas, les pods de n'importe quel déploiement resteraient `Pending` (`0/0 nodes are available`).
+- La machine hôte est **très surchargée** (charge 19.88 sur 4 cœurs), ce qui peut ralentir ou faire échouer les sondes et le démarrage des pods.
+- Il n'y a ni StorageClass ni IngressClass, donc un PVC ou un Ingress dans `svc-05` ne fonctionnerait pas.
+
+Ce sont des pistes, pas un diagnostic confirmé.
+
+## Pour identifier la cause exacte
+```bash
+minikube status
+kubectl get nodes
+kubectl -n aikube-agent2 get deploy svc-05 -o wide
+kubectl -n aikube-agent2 get pods -l app=svc-05   # adapter le label
+kubectl -n aikube-agent2 describe deploy svc-05
+kubectl -n aikube-agent2 describe pod <pod>       # section Events
+kubectl -n aikube-agent2 logs <pod> --previous
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp
+```
+
+## Corrections selon le symptôme
+| Symptôme | Cause probable | Correction |
+|---|---|---|
+| `Pending`, `0/0 nodes available` | Cluster arrêté ou sans nœud | `minikube start` |
+| `Pending`, `Insufficient cpu/memory` | Requests trop élevées | Réduire `resources.requests` |
+| `Pending`, PVC non lié | Pas de StorageClass | Créer un PV manuel ou une StorageClass |
+| `ImagePullBackOff` | Image ou tag erroné | Corriger `image:` |
+| `CrashLoopBackOff` | Erreur applicative, config ou variable manquante | Voir `logs --previous` |
+| `Running` mais `0/1 Ready` | Readiness probe en échec | Ajuster le port, le chemin ou les délais |
+
+Si vous me collez la sortie de `kubectl describe deploy svc-05` et de `describe pod` (section Events), je vous donnerai la cause précise et le YAML corrigé."
+v2,image,chat-claude-obs,3,tag d'image inexistant,1.0,1.0,,"# Diagnostic de `svc-05` (namespace `aikube-agent2`)
+
+Oui, `svc-05` pose un problème. Son pod `svc-05-554d5c5866-mh5fn` est en `ImagePullBackOff` (0/1, 0 restart) depuis 37 min.
+
+## Cause exacte
+
+Le tag d'image `busybox:9.99` n'existe pas. L'événement clé est :
+
+```
+Failed to pull image ""busybox:9.99"": ... manifest for busybox:9.99 not found: manifest unknown
+```
+
+Le premier échec (il y a 35 min) était un timeout réseau vers `registry-1.docker.io`, probablement transitoire. Il a été suivi d'un `manifest unknown` définitif. Même avec un réseau sain, le pull échouerait toujours, et kubelet ne fait que ralentir ses tentatives (`Back-off pulling image`).
+
+Le pod a bien été planifié sur `minikube-m02`. Ce n'est donc ni un problème de scheduling ni de ressources.
+
+## Correction
+
+Les autres déploiements du namespace utilisent `busybox:1.36`, déjà présent sur le nœud :
+
+```bash
+kubectl set image deployment/svc-05 app=busybox:1.36 -n aikube-agent2
+kubectl rollout status deployment/svc-05 -n aikube-agent2
+```
+
+Corrigez aussi le tag dans votre manifeste source (Git, Helm, etc.), sinon la prochaine application le remettra à `9.99` :
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+```
+
+## Points de vigilance
+
+- **Commande du conteneur** : `svc-03` utilise aussi `busybox:1.36` et est en `CrashLoopBackOff`. Si `svc-05` n'a pas de `command` qui garde le processus actif (par exemple `sleep 3600`), il passera de `ImagePullBackOff` à `CrashLoopBackOff`. Vérifiez avec `kubectl get deploy svc-05 -n aikube-agent2 -o yaml`.
+- **Santé du cluster** : l'hôte est surchargé (charge 18 sur 4 cœurs). Les événements montrent des `etcdserver: request timed out`, un `NodeNotReady` et un `connection refused` sur l'API server, et le cluster n'affiche actuellement aucun nœud planifiable. Le nouveau pod peut donc rester `Pending` tant que la charge n'est pas redescendue ou que les nœuds ne sont pas `Ready`. Contrôlez avec `kubectl get nodes`.
+- **Hors sujet pour `svc-05`** : le PVC `agent-data` référence une StorageClass `fast-ssd` inexistante (seule `standard` existe). Cela bloque `svc-01`, mais n'affecte pas `svc-05`."
+v2,crash,agent,3,variable DATABASE_URL manquante → exit 1,1.0,1.0,,"**Diagnostic** — Oui, `svc-03` est en panne. Son conteneur démarre, constate que `DATABASE_URL` n'est pas définie, puis s'arrête volontairement avec le code 1. Kubernetes le relance en boucle, d'où le `CrashLoopBackOff`.
+
+**Preuves**
+- Le pod `svc-03-577cbf7ddc-k8tmx` est en `0/1 CrashLoopBackOff` avec 9 redémarrages.
+- `describe` indique `Last State: Terminated, Reason: Error, Exit Code: 1`. Le conteneur a tourné environ 8 s (23:34:27 → 23:34:35), ce qui correspond au `sleep 2` plus le démarrage. Il n'y a pas d'OOMKill, et l'image `busybox:1.36` est bien présente.
+- La commande du conteneur dans le Deployment est :
+  `echo 'démarrage de api-service v2.3'; sleep 2; echo 'FATAL: variable d environnement DATABASE_URL manquante' >&2; exit 1`
+- Le conteneur n'a aucune section `Environment` (`Environment: <none>`). Aucune variable `DATABASE_URL` n'est donc injectée.
+- La condition du Deployment est `Available=False (MinimumReplicasUnavailable)`, puis `Progressing=False (ProgressDeadlineExceeded)`.
+- Les logs du conteneur précédent ne sont plus disponibles : le fichier de log `9.log` a été supprimé par la rotation. La cause se déduit donc de la commande et de l'absence de variable d'environnement, pas d'une ligne de log lue directement.
+- Les événements `etcdserver: request timed out` et `Error: operation timeout: context deadline exceeded` ont eu lieu au démarrage du cluster. Ils sont secondaires et n'expliquent pas le crash. Si vous voulez les relier à la charge de la machine hôte, il faudra comparer leurs heures avec `host_load_history`.
+
+**Correction proposée**
+
+Fournir la variable manquante, par exemple via un Secret :
+```bash
+kubectl -n aikube-agent2 create secret generic svc-03-db \
+  --from-literal=DATABASE_URL='postgres://user:pass@host:5432/db'
+
+kubectl -n aikube-agent2 set env deployment/svc-03 --from=secret/svc-03-db
+```
+Ou directement dans le YAML :
+```yaml
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: svc-03-db
+              key: DATABASE_URL
+```
+Cette modification déclenche un nouveau rollout de `svc-03`. Le risque est faible puisque le service est déjà indisponible.
+
+Le conteneur actuel est un simulateur : sa commande se termine toujours par `exit 1`, même avec la variable définie. Pour un vrai test, il faut remplacer cette commande par celle de l'application réelle, ou la conditionner à la présence de `DATABASE_URL`.
+
+**Certitude** — Élevée sur le mécanisme : code de sortie 1 et message FATAL présent dans la commande. Pour confirmer, appliquez la correction et vérifiez avec `kubectl -n aikube-agent2 logs deploy/svc-03` que le message FATAL a disparu."
+v2,crash,chat-claude,3,variable DATABASE_URL manquante → exit 1,0.5,0.0,,"Je ne peux pas inspecter directement le déploiement `svc-03` : je n'ai pas accès à son état (pods, événements, logs). Je ne peux donc pas vous donner une cause exacte sans inventer. Voici comment l'identifier rapidement.
+
+## 1. Diagnostic
+
+```bash
+# État général
+kubectl -n aikube-agent2 get deploy svc-03 -o wide
+kubectl -n aikube-agent2 get pods -l app=svc-03 -o wide   # adaptez le label
+
+# Cause : conditions, événements, rollout
+kubectl -n aikube-agent2 describe deploy svc-03
+kubectl -n aikube-agent2 rollout status deploy/svc-03
+
+# Pods en échec
+kubectl -n aikube-agent2 describe pod <pod>
+kubectl -n aikube-agent2 logs <pod> --previous --tail=100
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -20
+```
+
+## 2. Lecture rapide des symptômes
+
+| Symptôme | Cause probable | Correction |
+|---|---|---|
+| `Pending` + `FailedScheduling` | requests CPU/RAM trop grandes (max plaçable : 3680m CPU, 9618Mi RAM), ou quota/LimitRange | réduire les `requests`, vérifier `kubectl describe resourcequota -n aikube-agent2` |
+| `ImagePullBackOff` / `ErrImagePull` | image ou tag inexistant, registre privé sans `imagePullSecret` | corriger l'image/le tag, ajouter le secret |
+| `CrashLoopBackOff` | erreur applicative, config/Secret manquant, mauvaise commande | lire `logs --previous`, corriger la config |
+| `OOMKilled` (exit code 137) | `limits.memory` trop basse | augmenter la limite mémoire |
+| `Running` mais `0/1 Ready` | readiness probe en échec (mauvais port/chemin, timeout) | corriger la probe, augmenter `timeoutSeconds`/`initialDelaySeconds` |
+| `CreateContainerConfigError` | ConfigMap/Secret référencé inexistant | créer la ressource ou corriger la référence |
+| Redémarrages répétés par liveness | probe trop stricte | assouplir la probe |
+
+## 3. Point d'attention sur l'environnement
+
+La machine hôte est actuellement **surchargée** (charge 18,19 sur 4 cœurs, pic à 22,17). Sur un cluster minikube, cela peut provoquer des **timeouts de probes**, des démarrages lents et des redémarrages intempestifs, même si le manifeste est correct. Si les logs ne montrent aucune erreur applicative, essayez d'augmenter `timeoutSeconds`, `failureThreshold` et d'ajouter une `startupProbe` :
+
+```yaml
+startupProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  periodSeconds: 5
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  timeoutSeconds: 5
+  periodSeconds: 10
+  failureThreshold: 6
+```
+
+Si vous me collez la sortie de `kubectl describe deploy svc-03` et `kubectl describe pod <pod>` (section Events incluse), je pourrai vous indiquer la cause précise et le patch YAML exact."
+v2,crash,chat-claude-obs,3,variable DATABASE_URL manquante → exit 1,0.5,0.5,,"## Oui, svc-03 a un problème, mais les données fournies ne permettent pas d'en prouver la cause exacte
+
+**Constat**
+- Le pod `svc-03-577cbf7ddc-k8tmx` est en `CrashLoopBackOff` (9 redémarrages) sur `minikube-m02`.
+- Il est bien planifié, l'image `busybox:1.36` est présente et le conteneur démarre (`Started container app`). Il ne s'agit donc ni d'un problème d'image, ni de scheduling, ni de PVC. Un PVC `Pending` aurait laissé le pod en `Pending`, comme svc-01.
+- Le conteneur démarre puis s'arrête, et kubelet le relance avec un back-off croissant.
+
+**Ce que je ne peux pas affirmer**
+Il manque le code de sortie (`Last State`), les logs du conteneur précédent et le `command`/`args` du Deployment. Je ne peux donc pas dire pourquoi le conteneur s'arrête. Deux hypothèses sont plausibles :
+
+1. **Le conteneur n'a pas de processus long**. C'est la cause classique avec `busybox` : sans `command` bloquant, il se termine aussitôt (code 0), ce qui donne un `CrashLoopBackOff`. svc-02 utilise la même image et tourne, donc l'image n'est pas en cause. La différence se jouerait dans le spec.
+2. **La surcharge de la machine hôte** (charge 18 sur 4 cœurs, pic à 22). L'événement `Error: operation timeout: context deadline exceeded` (créé/démarré trop lentement) et les `etcdserver: request timed out` vont dans ce sens. Le même symptôme touche svc-07, qui n'a pourtant aucun rapport avec svc-03. Cette cause est environnementale et ne vient pas de la configuration de svc-03.
+
+## Diagnostic à lancer
+
+```bash
+kubectl logs svc-03-577cbf7ddc-k8tmx -n aikube-agent2 --previous
+kubectl describe pod svc-03-577cbf7ddc-k8tmx -n aikube-agent2   # Last State, Exit Code, Reason
+kubectl get deploy svc-03 -n aikube-agent2 -o yaml | grep -A5 -E ""command|args""
+```
+
+Interprétation :
+- **`Exit Code: 0`** et pas de logs : le processus se termine normalement, c'est l'hypothèse 1.
+- **`Exit Code` ≠ 0** : l'erreur applicative est dans les logs.
+- **`Reason: ContainerCannotRun`, `StartError` ou timeouts sans exit code applicatif** : c'est l'hypothèse 2.
+
+## Corrections
+
+**Hypothèse 1** : donner un processus long au conteneur.
+
+```yaml
+containers:
+  - name: app
+    image: busybox:1.36
+    command: [""sh"", ""-c"", ""while true; do sleep 3600; done""]
+```
+
+À appliquer avec `kubectl edit deploy svc-03 -n aikube-agent2` ou `kubectl patch`.
+
+**Hypothèse 2** : réduire la charge de l'hôte. Les autres déploiements du namespace (svc-05 avec `busybox:9.99` inexistant, svc-07 en crash) génèrent du bruit. Corrigez ou mettez-les à 0 réplique, puis supprimez le pod pour repartir sans back-off :
+
+```bash
+kubectl delete pod svc-03-577cbf7ddc-k8tmx -n aikube-agent2
+```
+
+Si les logs ou le `describe` confirment une des deux pistes, envoyez-moi le résultat et je vous donnerai le correctif exact."
+v2,oom,agent,3,"OOMKilled, limite 48Mi trop basse",1.0,1.0,,"**Diagnostic** — Oui, svc-07 a un problème. Son conteneur est tué par manque de mémoire (OOMKilled, code 137) et le pod reste en CrashLoopBackOff. Le script alloue 100 Mo alors que la limite mémoire est de 48 Mi.
+
+**Preuves**
+- Pod `svc-07-7ff9bc6776-9x87x` : `0/1 CrashLoopBackOff`, 10 redémarrages. Dernier état : `Terminated – Reason: OOMKilled, Exit Code: 137`. Il a tourné environ 9 s (23:34:50 → 23:34:59) avant d'être tué.
+- Commande du conteneur : `b = bytearray(100*1024*1024)`, soit 100 Mo alloués d'un coup, suivis de `time.sleep(100000)`.
+- Ressources : `limits.memory: 48Mi` et `requests.memory: 32Mi`. 100 Mo dépassent donc largement la limite.
+- Deployment : `Available=False (MinimumReplicasUnavailable)` et `Progressing=False (ProgressDeadlineExceeded)`.
+- Les événements `operation timeout: context deadline exceeded` et `etcdserver: request timed out` dans le namespace sont des perturbations transitoires du cluster. Elles n'expliquent pas le crash, qui est bien un OOM.
+
+**Correction proposée** — Il faut soit augmenter la limite, soit réduire l'allocation. Si les 100 Mo sont voulus, la limite doit être supérieure à environ 100 Mo plus le runtime Python (~10-15 Mo), soit 160 Mi avec de la marge :
+
+```bash
+kubectl -n aikube-agent2 patch deployment svc-07 --type=json -p='[
+ {""op"":""replace"",""path"":""/spec/template/spec/containers/0/resources/limits/memory"",""value"":""160Mi""},
+ {""op"":""replace"",""path"":""/spec/template/spec/containers/0/resources/requests/memory"",""value"":""128Mi""}
+]'
+```
+
+Le patch déclenche un rolling update du pod. Le service est déjà indisponible, donc le risque est faible. Si l'allocation de 100 Mo est une erreur de l'application, corrigez plutôt le code et gardez la limite de 48 Mi.
+
+Pour vérifier ensuite : `kubectl -n aikube-agent2 rollout status deploy/svc-07`.
+
+**Certitude** — Élevée. Le code OOMKilled/137 est explicite et la commande du conteneur alloue plus que la limite. Les autres pods du namespace (svc-01, 03, 05, 09) ont chacun leur propre problème, indépendant de svc-07."
+v2,oom,chat-claude,3,"OOMKilled, limite 48Mi trop basse",1.0,0.0,,"Je ne peux pas inspecter le déploiement `svc-07` depuis cette conversation : je n'ai pas accès à son état, à ses événements ni à ses logs. Je ne veux pas inventer une cause. Voici comment l'identifier rapidement.
+
+## 1. Diagnostic
+
+```bash
+# État général
+kubectl -n aikube-agent2 get deploy svc-07 -o wide
+kubectl -n aikube-agent2 rollout status deploy/svc-07 --timeout=10s
+kubectl -n aikube-agent2 describe deploy svc-07
+
+# Pods associés
+kubectl -n aikube-agent2 get pods -l app=svc-07 -o wide   # adapter le label
+kubectl -n aikube-agent2 describe pod <pod>
+
+# Logs (y compris du conteneur précédent en cas de crash)
+kubectl -n aikube-agent2 logs <pod> --previous
+
+# Événements récents
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -20
+```
+
+## 2. Lecture du statut et cause probable
+
+| Symptôme | Cause exacte | Correction |
+|---|---|---|
+| `ImagePullBackOff` / `ErrImagePull` | Image ou tag inexistant, registre inaccessible, secret manquant | Corriger `image:` ou ajouter `imagePullSecrets` |
+| `CrashLoopBackOff` | Erreur applicative, config ou variable d'env manquante | Voir `logs --previous`, corriger ConfigMap/Secret/commande |
+| `OOMKilled` (`Last State: Terminated`) | `limits.memory` trop basse | Augmenter la limite mémoire |
+| `Pending` + `FailedScheduling` | Requests trop élevées, nodeSelector/taint, PVC non lié | Réduire les requests (max par pod : 3680m CPU / 9520Mi RAM) ou corriger le sélecteur/PVC |
+| `Running` mais `0/1 Ready` | Readiness probe en échec (mauvais port/chemin, démarrage lent) | Corriger la probe, augmenter `initialDelaySeconds` / `timeoutSeconds` |
+| `CreateContainerConfigError` | ConfigMap ou Secret référencé inexistant | Créer la ressource ou corriger la référence |
+| `Evicted` / `Insufficient memory` | Mémoire de l'hôte saturée | Réduire les requests, libérer de la RAM |
+
+## 3. Point d'attention sur l'environnement
+
+La machine hôte est actuellement **surchargée** (charge 19 sur 4 cœurs, pic à 22,17). Sur un cluster minikube, cela peut provoquer à lui seul :
+- des **timeouts de probes** (liveness/readiness) et donc des redémarrages ;
+- des démarrages très lents et des échecs de rollout (`ProgressDeadlineExceeded`).
+
+Si les logs sont sains et que seules les probes échouent, assouplissez-les :
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+```
+
+Si vous me collez la sortie de `kubectl describe pod` et de `logs --previous`, je vous indique la cause exacte et le correctif précis (patch YAML)."
+v2,oom,chat-claude-obs,3,"OOMKilled, limite 48Mi trop basse",1.0,0.5,,"## Oui, svc-07 pose un problème
+
+Le pod `svc-07-7ff9bc6776-9x87x` est en **CrashLoopBackOff** (10 redémarrages, 0/1 prêt). Il est bien planifié sur `minikube-m02` et l'image `python:3.12-alpine` est présente. Le conteneur démarre, puis s'arrête et est relancé en boucle.
+
+## Cause : à confirmer, je ne peux pas l'affirmer avec ces relevés
+
+Les événements montrent que le conteneur démarre, mais **ni le code de sortie ni les logs** ne sont fournis. La cause exacte du crash n'y figure donc pas. Deux éléments sont visibles :
+
+1. **Hypothèse la plus probable : le conteneur n'a pas de processus long.** Si le Deployment ne définit ni `command` ni `args`, l'image `python:3.12-alpine` lance `python3` en mode interactif. Sans TTY ni stdin, l'interpréteur se termine tout de suite (code 0). Comme `restartPolicy: Always`, Kubernetes le relance, d'où le CrashLoopBackOff. Le pod svc-03 (busybox sans commande) a le même comportement.
+2. **Facteur aggravant : la machine hôte est surchargée** (charge 18 sur 4 cœurs). Cela explique les `operation timeout: context deadline exceeded`, les `etcdserver: request timed out` et le `NodeNotReady`. Ces erreurs ralentissent la création des conteneurs, mais elles ne provoquent pas la boucle de crash à elles seules.
+
+## Pour confirmer
+
+```bash
+kubectl logs svc-07-7ff9bc6776-9x87x -n aikube-agent2 --previous
+kubectl describe pod svc-07-7ff9bc6776-9x87x -n aikube-agent2 | grep -A8 ""Last State""
+kubectl get deploy svc-07 -n aikube-agent2 -o jsonpath='{.spec.template.spec.containers[0].command} {.spec.template.spec.containers[0].args}'
+```
+
+- **Exit Code 0 avec `Completed`, et pas de command/args** : l'hypothèse est confirmée.
+- **Exit Code différent de 0** : les logs indiquent l'erreur applicative (script manquant, exception, etc.).
+- **Exit Code 137** : OOMKilled, ou arrêt dû à la surcharge.
+
+## Correction (si l'hypothèse est confirmée)
+
+Donnez au conteneur un processus qui reste au premier plan. Voici un exemple à adapter à votre application :
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: svc-07
+  namespace: aikube-agent2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: svc-07
+  template:
+    metadata:
+      labels:
+        app: svc-07
+    spec:
+      containers:
+      - name: app
+        image: python:3.12-alpine
+        command: [""python"", ""-m"", ""http.server"", ""8080""]
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+```
+
+Appliquez-le avec `kubectl apply -f`, puis vérifiez avec `kubectl rollout status deploy/svc-07 -n aikube-agent2`.
+
+Si le crash vient d'une erreur applicative, corrigez-la d'après les logs `--previous`. Pensez aussi à réduire la charge de l'hôte (WSL2 avec 4 cœurs), sinon les timeouts continueront de perturber le cluster.
+
+## Hors sujet pour svc-07, mais à noter
+
+- **"
+v2,pending,agent,3,request de 64 CPU impossible,1.0,1.0,,"**Diagnostic** — Oui, svc-09 est en panne. Son unique pod reste en `Pending` et n'est jamais planifié. Le déploiement demande **64 CPU** (`requests.cpu: ""64""`), alors que chaque nœud n'a que 4 cœurs.
+
+**Preuves**
+- Le pod `svc-09-57d99b785d-qqrpf` est en `0/1 Pending`, sans nœud assigné, depuis 41 min.
+- Événement : `FailedScheduling … 0/3 nodes are available: 3 Insufficient cpu. preemption: … No preemption victims found`.
+- Le YAML du déploiement contient `resources.requests: {cpu: ""64"", memory: 16Mi}`. Le `""64""` sans suffixe signifie 64 cœurs entiers. L'intention était probablement `64m`.
+- Conditions du déploiement : `Available=False (MinimumReplicasUnavailable)` et `Progressing=False (ProgressDeadlineExceeded)`.
+- Capacité libre par nœud : 3100m (minikube), 3610m (m02) et 3680m (m03). Le plus gros pod plaçable demande donc au maximum 3,68 CPU, et 64 CPU ne tiendra jamais.
+- Il ne s'agit pas d'un manque transitoire de ressources. Les nœuds sont presque inactifs, à 3–5 % de CPU réel.
+- Les erreurs passées `connection refused` et `etcdserver: request timed out` sont des incidents transitoires de l'API server et d'etcd. La machine hôte est très chargée, avec 17,5 de charge sur 4 cœurs. Ces erreurs ne sont pas la cause du blocage actuel.
+
+**Correction proposée**
+
+Corriger la requête CPU. Le pod est en `Pending`, donc cela ne coupe rien en production.
+```bash
+kubectl -n aikube-agent2 patch deployment svc-09 --type=json \
+  -p='[{""op"":""replace"",""path"":""/spec/template/spec/containers/0/resources/requests/cpu"",""value"":""64m""}]'
+kubectl -n aikube-agent2 rollout status deployment/svc-09
+```
+Dans le manifeste source, remplacer `cpu: ""64""` par `cpu: ""64m""` (ou par `100m`, qui est plus réaliste). Ré-appliquer ensuite le manifeste, sinon l'ancienne valeur reviendrait au prochain `kubectl apply`.
+
+Comme la charge de la machine hôte est élevée, évitez de mettre une requête CPU supérieure à ce dont `sleep` a besoin. Les autres pods du namespace ont des problèmes distincts, que je peux examiner si vous le souhaitez. Ce sont svc-01 (PVC `agent-data` avec une StorageClass `fast-ssd` introuvable), svc-05 (image `busybox:9.99` inexistante), ainsi que svc-03 et svc-07 (CrashLoopBackOff).
+
+**Certitude** — Élevée. La requête de 64 CPU, l'événement `Insufficient cpu` sur 3 nœuds et la capacité maximale de 4 cœurs par nœud concordent. Après le patch, le pod devrait passer en `Running` en quelques secondes."
+v2,pending,chat-claude,3,request de 64 CPU impossible,0.5,0.0,,"Je n'ai pas accès à l'état réel du déploiement `svc-09` dans ce échange : je ne peux ni lire ses événements, ni ses logs, ni son statut. Je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment l'identifier rapidement.
+
+## 1. Diagnostic
+
+```bash
+# État général
+kubectl -n aikube-agent2 get deploy svc-09 -o wide
+kubectl -n aikube-agent2 get pods -l app=svc-09   # adapter le label si besoin
+
+# Conditions et événements du déploiement
+kubectl -n aikube-agent2 describe deploy svc-09
+kubectl -n aikube-agent2 rollout status deploy/svc-09
+
+# Détail d'un pod en échec
+kubectl -n aikube-agent2 describe pod <pod>
+kubectl -n aikube-agent2 logs <pod> --previous
+
+# Événements récents
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -20
+```
+
+## 2. Lecture du symptôme
+
+| Symptôme (`STATUS`) | Cause probable | Correction |
+|---|---|---|
+| `Pending` + `FailedScheduling` | Requests CPU/RAM trop élevées (max plaçable : 3680m CPU / 9629Mi RAM), taint, nodeSelector ou PVC non lié | Réduire les `requests` ou corriger le sélecteur |
+| `ImagePullBackOff` / `ErrImagePull` | Image ou tag inexistant, registre privé sans `imagePullSecret` | Corriger l'image ou ajouter le secret |
+| `CrashLoopBackOff` | Erreur applicative, variable d'env ou ConfigMap/Secret manquant, probe trop agressive | Consulter `logs --previous`, corriger la config |
+| `OOMKilled` (exit code 137) | `limits.memory` trop basse | Augmenter la limite mémoire |
+| `CreateContainerConfigError` | ConfigMap ou Secret référencé inexistant | Le créer dans `aikube-agent2` |
+| `Running` mais `0/1 Ready` | Readiness probe en échec (mauvais port ou chemin) | Corriger la probe |
+| Pods non créés | `ResourceQuota` ou `LimitRange` du namespace dépassé | `kubectl describe quota -n aikube-agent2` |
+
+## 3. Corrections courantes
+
+Exemple pour ajuster les ressources :
+
+```bash
+kubectl -n aikube-agent2 set resources deploy/svc-09 \
+  --requests=cpu=100m,memory=128Mi --limits=cpu=500m,memory=256Mi
+```
+
+Pour revenir à la révision précédente si le problème vient d'un récent changement :
+
+```bash
+kubectl -n aikube-agent2 rollout undo deploy/svc-09
+```
+
+## Rappel sur ce cluster
+
+Il s'agit d'un cluster minikube : les 3 nœuds partagent les 9629 Mio de RAM de l'hôte, qui est actuellement surchargé (charge 17.56 sur 4 cœurs). Cela peut provoquer des lenteurs, des échecs de probes (timeouts) et des redémarrages, même si la configuration du déploiement est correcte.
+
+Si vous me collez la sortie de `kubectl describe deploy svc-09` et de `kubectl describe pod`, ou le YAML du déploiement, je vous indiquerai la cause exacte et le correctif précis."
+v2,pending,chat-claude-obs,3,request de 64 CPU impossible,1.0,1.0,,"## Oui, svc-09 pose problème
+
+Le pod `svc-09-57d99b785d-qqrpf` reste en **Pending** depuis 43 min, sans nœud assigné. Le Deployment est donc en 0/1.
+
+## Cause
+
+L'événement du scheduler est explicite :
+
+```
+0/3 nodes are available: 3 Insufficient cpu. preemption: ... No preemption victims found
+```
+
+Le pod demande plus de CPU (`resources.requests.cpu`) qu'aucun des 3 nœuds n'en a de libre. Le scheduler se base sur les **requests** et non sur l'usage réel, qui est très faible (3 à 5 %). La préemption ne peut rien libérer, car aucun pod de priorité inférieure ne peut être évincé.
+
+Le CPU libre actuel est de 3100m, 3610m et 3680m. Si la situation n'a pas changé depuis l'événement, la request de svc-09 dépasse donc **3680m**. Je ne vois pas le manifeste du Deployment, donc je ne peux pas confirmer la valeur exacte. Vérifiez-la ainsi :
+
+```bash
+kubectl get deploy svc-09 -n aikube-agent2 \
+  -o jsonpath='{.spec.template.spec.containers[*].resources}'
+```
+
+Ce n'est pas un problème d'image (`busybox:1.36` est correcte) ni de PVC. Le PVC `agent-data` en Pending, avec la StorageClass `fast-ssd` inexistante, concerne svc-01.
+
+L'événement date de 31 min et le cluster a connu des erreurs etcd et un `NodeNotReady` entre-temps. Il peut donc être périmé. Confirmez avec `kubectl describe pod svc-09-57d99b785d-qqrpf -n aikube-agent2`, section Events.
+
+## Correction
+
+Réduisez la request CPU à une valeur réaliste pour un conteneur busybox :
+
+```bash
+kubectl patch deployment svc-09 -n aikube-agent2 --type=strategic -p '
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+'
+```
+
+Ou, dans le manifeste :
+
+```yaml
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+```
+
+Le Deployment créera alors un nouveau pod, qui devrait être planifié immédiatement. Vérifiez avec :
+
+```bash
+kubectl rollout status deployment/svc-09 -n aikube-agent2
+```
+
+L'hôte est actuellement surchargé (charge 17 sur 4 cœurs). Gardez donc des requests modestes, même si elles tiennent sur un nœud."
+v2,selector,agent,3,nodeSelector sans nœud correspondant,0.5,0.5,,"**Diagnostic** — Dans `aikube-agent2`, il n'y a pas de déploiement `svc-06`, donc il n'y a pas de problème à diagnostiquer sur lui. Il n'a pas été créé, ou il a été supprimé. Il est possible que la création ait échoué pendant l'instabilité de l'API server (voir les preuves).
+
+**Preuves**
+- `kubectl get deployment svc-06 -n aikube-agent2` renvoie `NotFound`.
+- Le namespace contient seulement `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`. Il n'y a aucun ReplicaSet, pod ni événement pour `svc-06`. Le numéro 06 manque dans la série.
+- Les événements montrent une API server/etcd instable à la création du namespace : `etcdserver: request timed out`, `connection refused` sur le port 8443, `resource quota evaluation timed out`. Une création de `svc-06` a pu se perdre à ce moment. Ce n'est qu'une hypothèse, car aucun événement ne la mentionne.
+
+**Correction proposée**
+1. Vérifier que le nom et le namespace sont bons :
+   ```
+   kubectl get deploy -A | grep svc-06
+   ```
+2. Si `svc-06` devait exister, le réappliquer depuis votre manifeste ou votre dépôt GitOps (`kubectl apply -f svc-06.yaml`). Je ne peux pas le recréer : je suis en lecture seule, et je n'ai pas son manifeste.
+
+**Autres anomalies du namespace** (si vous cherchiez en fait l'un de ces services) :
+- `svc-05` est en `ImagePullBackOff`. L'image `busybox:9.99` n'existe pas (`manifest unknown`). Il faut utiliser un tag valide, par exemple `busybox:1.36`.
+- `svc-01` est en `Pending`. Le PVC `agent-data` ne peut pas être créé parce que la StorageClass `fast-ssd` n'existe pas.
+- `svc-09` est en `Pending` avec `Insufficient cpu` sur les 3 nœuds.
+- `svc-03` et `svc-07` sont en `CrashLoopBackOff`. Je n'ai pas encore regardé leurs logs.
+
+Je peux creuser l'un de ces cas si vous voulez.
+
+**Certitude** — Élevée sur le fait que `svc-06` n'existe pas. Faible sur la raison de son absence, car aucune trace ne permet de la confirmer. Il faudrait vérifier l'historique de déploiement (Git/CI) ou les audit logs de l'API server."
+v2,selector,chat-claude,3,nodeSelector sans nœud correspondant,0.5,0.0,,"Je ne peux pas répondre sur l'état réel de `svc-06` : je n'ai pas accès à son statut, à ses événements ni à ses logs. Je préfère ne pas inventer une cause. Voici comment l'établir en quelques commandes.
+
+## Diagnostic
+
+```bash
+# 1. État global du déploiement et de ses pods
+kubectl -n aikube-agent2 get deploy svc-06 -o wide
+kubectl -n aikube-agent2 get pods -l app=svc-06 -o wide   # adapter le label si besoin
+
+# 2. Conditions et événements du déploiement
+kubectl -n aikube-agent2 describe deploy svc-06
+
+# 3. Cause précise côté pod (Events, State, Last State, Reason, Exit Code)
+kubectl -n aikube-agent2 describe pod <nom-du-pod>
+
+# 4. Logs (y compris du conteneur précédent en cas de crash)
+kubectl -n aikube-agent2 logs <nom-du-pod> --previous
+kubectl -n aikube-agent2 logs <nom-du-pod>
+
+# 5. Événements récents du namespace
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -30
+```
+
+## Correspondance symptôme → cause → correction
+
+| Symptôme | Cause probable | Correction |
+|---|---|---|
+| `Pending` + `FailedScheduling` (Insufficient cpu/memory) | Requests trop élevées. Un pod doit tenir sur un nœud (max 3680m CPU) et la RAM totale réelle est de 9589 Mi | Réduire `resources.requests` |
+| `ImagePullBackOff` / `ErrImagePull` | Image ou tag inexistant, registre inaccessible, secret de pull manquant | Corriger `image:` ou ajouter `imagePullSecrets` |
+| `CrashLoopBackOff` | Erreur applicative, variable d'environnement, ConfigMap ou Secret manquant | Lire `logs --previous` et corriger la config |
+| `OOMKilled` (Exit Code 137) | `limits.memory` trop basse | Augmenter la limite mémoire |
+| `CreateContainerConfigError` | ConfigMap ou Secret référencé inexistant | Le créer dans `aikube-agent2` |
+| Pod `Running` mais `0/1 Ready` | Readiness probe en échec (mauvais port ou chemin) | Corriger la probe |
+| Redémarrages répétés (liveness) | Probe trop stricte ou `timeoutSeconds` trop court | Ajuster la probe |
+
+## Remarque sur la machine hôte
+
+La charge est actuellement de 17.46 sur 4 cœurs, avec un pic à 22.17. Avec une telle charge, des probes à timeout court (1 s par défaut) peuvent échouer de façon intermittente, ce qui provoque des redémarrages ou des pods non `Ready` sans bug applicatif. Si c'est ce que vous observez, augmentez les timeouts :
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+```
+
+Si vous me collez la sortie de `kubectl describe pod` et de `logs --previous` (ou le YAML du déploiement), je vous indique la cause exacte et le correctif à appliquer."
+v2,selector,chat-claude-obs,3,nodeSelector sans nœud correspondant,0.0,0.0,,"## Verdict : impossible de conclure pour `svc-06`
+
+Aucun élément fourni ne mentionne `svc-06` :
+- le `kubectl get deployments,replicasets,pods,...` a expiré (timeout de 60 s), donc on n'a pas l'état du Deployment, de ses ReplicaSets ni de ses pods ;
+- la liste d'événements ne contient aucune ligne pour `svc-06`, alors que les autres services (`svc-01` à `svc-05`, `svc-07`, `svc-09`) y apparaissent.
+
+Je ne peux donc pas vous donner de cause exacte sans l'inventer.
+
+## Ce qui explique probablement ce silence (hypothèses, à vérifier)
+- **Le Deployment n'a pas été créé** : des erreurs `etcdserver: request timed out` et `connection refused` sur l'API server sont visibles à la création des autres ressources.
+- **Il est sain**, et ses événements normaux ont expiré (rétention d'environ 1 h).
+- **Il n'a pas encore généré d'événement**, car le contrôleur est ralenti.
+
+## Contexte : le cluster est instable
+- L'API et etcd sont lents ou indisponibles par moments (timeouts, `connection refused`, `Node is not ready`).
+- La machine hôte est surchargée (charge de 19,46 sur 4 cœurs), ce qui est très probablement la cause de ces timeouts etcd et API.
+- Les autres services ont des problèmes distincts :
+  - `svc-05` : image `busybox:9.99` inexistante.
+  - `svc-01` : PVC `agent-data` sans StorageClass `fast-ssd`.
+  - `svc-09` : CPU insuffisant.
+  - `svc-03` et `svc-07` : conteneurs en `BackOff`.
+
+Aucun de ces problèmes ne peut être attribué à `svc-06` sans preuve.
+
+## Pour diagnostiquer `svc-06`
+Réduisez d'abord la charge de l'hôte, puis lancez des commandes ciblées, plus légères que le `get` global :
+
+```bash
+kubectl get deploy svc-06 -n aikube-agent2 -o wide
+kubectl describe deploy svc-06 -n aikube-agent2
+kubectl get rs,pods -n aikube-agent2 -l app=svc-06
+kubectl get events -n aikube-agent2 --field-selector involvedObject.name=svc-06
+kubectl logs deploy/svc-06 -n aikube-agent2 --tail=50
+```
+
+Si le Deployment est introuvable (`NotFound`), il faut le recréer en réappliquant son manifeste une fois l'API stable. Sinon, envoyez-moi la sortie de `describe` et des pods : je pourrai identifier la cause précise."
+v2,config,agent,3,ConfigMap agent-settings absente,0.5,0.5,,"**Diagnostic** — Le déploiement `svc-08` n'existe pas dans `aikube-agent2`, donc il n'y a rien à corriger sur lui. Il n'a probablement jamais été créé. Les autres services du namespace ont par contre des problèmes réels.
+
+**Preuves**
+- `kubectl get deployments -n aikube-agent2` renvoie seulement svc-01, 02, 03, 05, 07 et 09. Il n'y a pas de svc-08, ni de ReplicaSet ou de pod associé, et aucun événement ne le mentionne.
+- Ma première requête directe sur `svc-08` a échoué avec `connection reset by peer`. C'était une erreur transitoire de l'API server, pas un « NotFound ». La liste obtenue ensuite confirme pourtant l'absence.
+- Les numéros 04 et 06 manquent aussi. Au moment du déploiement, l'API server et etcd étaient instables : `etcdserver: request timed out`, `connection refused` sur 192.168.49.2:8443, `resource quota evaluation timed out`. Une création de svc-08 a pu échouer à ce moment-là. C'est une hypothèse, je n'ai pas de trace directe.
+
+**Correction proposée**
+- Si svc-08 est attendu, recréez-le à partir de son manifeste source (Git, Helm, etc.) :
+  `kubectl apply -f svc-08.yaml -n aikube-agent2`
+- Vérifiez aussi que le nom et le namespace sont corrects. Pour chercher ailleurs : `kubectl get deploy -A | grep svc-08`.
+
+**Problèmes constatés sur les autres déploiements**
+- **svc-05** : `ImagePullBackOff`. L'image `busybox:9.99` n'existe pas (`manifest unknown`). Corrigez avec `kubectl set image deploy/svc-05 app=busybox:1.36 -n aikube-agent2`.
+- **svc-01** : `Pending`. Le PVC `agent-data` est bloqué parce que la StorageClass `fast-ssd` n'existe pas. Créez cette StorageClass ou changez celle du PVC.
+- **svc-09** : `Pending` avec `3 Insufficient cpu`. Réduisez les `requests` CPU ou libérez de la capacité.
+- **svc-03 et svc-07** : `CrashLoopBackOff`. Je n'ai pas encore regardé leurs logs. Je peux le faire si vous le souhaitez.
+
+**Certitude** — Élevée sur l'absence de svc-08. Moyenne sur la cause (création perdue pendant l'instabilité d'etcd). Pour confirmer, il faudrait le manifeste d'origine ou l'historique de déploiement (CI, Git)."
+v2,config,chat-claude,3,ConfigMap agent-settings absente,1.0,0.0,,"Je ne peux pas répondre précisément : je n'ai pas accès à l'état du déploiement `svc-08` (statut, événements, logs, spec). Je ne veux pas inventer une cause.
+
+## Point à noter sur la machine hôte
+La charge est de **16.88 sur 4 cœurs** (pic à 22.17). Cela peut à lui seul causer :
+- des échecs de `livenessProbe` / `readinessProbe` (timeouts) ;
+- des redémarrages en boucle ;
+- des démarrages très lents (`ProgressDeadlineExceeded`).
+
+Si `svc-08` a des probes avec un `timeoutSeconds` court, cette surcharge est une piste sérieuse.
+
+## Diagnostic à lancer
+```bash
+kubectl -n aikube-agent2 get deploy svc-08 -o wide
+kubectl -n aikube-agent2 describe deploy svc-08
+kubectl -n aikube-agent2 get pods -l app=svc-08 -o wide   # adapter le label
+kubectl -n aikube-agent2 describe pod <pod>
+kubectl -n aikube-agent2 logs <pod> --previous
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -30
+```
+
+## Lecture des symptômes
+
+| Symptôme | Cause probable | Correction |
+|---|---|---|
+| `ImagePullBackOff` / `ErrImagePull` | Image ou tag inexistant, registre inaccessible, secret manquant | Corriger `image:` ou ajouter `imagePullSecrets` |
+| `CrashLoopBackOff` | Erreur applicative, variable ou ConfigMap/Secret manquant, probe trop stricte | Lire `logs --previous`, corriger la config |
+| `OOMKilled` (exit code 137) | `limits.memory` trop basse | Augmenter la limite mémoire |
+| `Pending` + `FailedScheduling` | Requests trop élevées (max plaçable : 3680m CPU, 9673Mi RAM), PVC non lié, taint/nodeSelector | Réduire les requests ou corriger le scheduling |
+| `CreateContainerConfigError` | ConfigMap/Secret référencé inexistant | Créer la ressource dans `aikube-agent2` |
+| Pods `Running` mais `0/1 Ready` | `readinessProbe` en échec (mauvais port/chemin) | Corriger la probe |
+| `ProgressDeadlineExceeded` | Rollout bloqué | `kubectl rollout status`, puis corriger la cause sous-jacente |
+
+## Exemple de correction (probes tolérantes à la charge)
+```yaml
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 6
+```
+
+Si vous me collez la sortie de `kubectl describe deploy svc-08`, de `describe pod` et des événements, je pourrai identifier la cause exacte et vous donner le YAML corrigé."
+v2,config,chat-claude-obs,3,ConfigMap agent-settings absente,0.5,0.5,,"## Réponse : svc-08 n'apparaît pas dans le relevé
+
+Dans la sortie fournie, **aucun Deployment `svc-08` n'existe** dans `aikube-agent2`. Il n'y a ni Deployment, ni ReplicaSet, ni Pod, ni événement à son nom. Les Deployments présents sont svc-01, 02, 03, 05, 07 et 09 (svc-04 et svc-06 sont aussi absents). Je ne peux donc pas diagnostiquer svc-08 : il n'a probablement jamais été créé (ou a échoué à l'être), il a été supprimé, ou il se trouve dans un autre namespace.
+
+Pour vérifier :
+
+```bash
+kubectl get deploy svc-08 -A
+kubectl get deploy -n aikube-agent2 svc-08 -o yaml
+kubectl get events -A --field-selector involvedObject.name=svc-08
+```
+
+Si le manifeste existe, l'application a pu échouer. Les événements `etcdserver: request timed out` et `connection refused` suggèrent que des créations ont été perdues pendant la période de surcharge de l'hôte (charge 16.41 sur 4 cœurs). Réappliquez-le dans ce cas :
+
+```bash
+kubectl apply -f svc-08.yaml -n aikube-agent2
+```
+
+## Problèmes constatés sur les autres Deployments
+
+Si vous pensiez à l'un d'eux, voici ce que montre le relevé :
+
+| Deployment | Symptôme | Cause |
+|---|---|---|
+| svc-01 | Pending | Le PVC `agent-data` référence la StorageClass `fast-ssd`, qui n'existe pas (seule `standard` existe). |
+| svc-05 | ImagePullBackOff | Le tag `busybox:9.99` n'existe pas (`manifest unknown`). Utilisez par exemple `busybox:1.36`. |
+| svc-09 | Pending | `Insufficient cpu` sur les 3 nœuds : les requests CPU du pod sont trop élevées. Il faut les réduire (max 3680m par pod). |
+| svc-03 et svc-07 | CrashLoopBackOff | `context deadline exceeded` au démarrage, sans doute lié à la surcharge de l'hôte. Il faut consulter `kubectl logs --previous` pour confirmer. |
+| svc-02 | Pod Running, mais déploiement 0/1 | `NodeNotReady` sur minikube-m02 : le nœud est instable. |
+
+Pour corriger svc-01, remplacez la StorageClass du PVC par la valeur par défaut. Le champ `storageClassName` d'un PVC est immuable, il faut donc le recréer :
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data
+  namespace: aikube-agent2
+spec:
+  accessModes: [""ReadWriteOnce""]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+Dites-moi si vous voulez que j'analyse l'un de ces cas, ou si svc-08 se trouve dans un autre namespace."
+v2,probe,agent,3,readinessProbe sur le port 8081 au lieu de 80,0.0,0.0,,"**Diagnostic** — Le déploiement `svc-04` n'existe pas dans `aikube-agent2`. Ce n'est donc pas un problème propre à svc-04. En revanche, le namespace et le cluster sont en mauvais état : l'API server et etcd sont instables.
+
+**Preuves**
+- `kubectl get deployment svc-04 -n aikube-agent2` renvoie `NotFound`.
+- La liste des déploiements du namespace contient svc-01, 02, 03, 05, 07 et 09. Il n'y a ni svc-04, ni pod, ni ReplicaSet associé. Les numéros 04, 06 et 08 sont absents.
+- La création de svc-04 a pu échouer. Les événements montrent des erreurs de création sur les autres déploiements pendant la même période : `etcdserver: request timed out`, `connection refused` sur 192.168.49.2:8443, `resource quota evaluation timed out`.
+- La recherche d'événements sur svc-04 a échoué avec `connection reset by peer`. Je n'ai donc pas pu confirmer s'il a existé puis été supprimé, ou s'il n'a jamais été créé.
+- Plusieurs requêtes ont expiré (`délai dépassé 20 s`). L'API est donc encore dégradée.
+- Les autres déploiements ont leurs propres problèmes :
+  - svc-01 : Pending, le PVC `agent-data` est bloqué car la StorageClass `fast-ssd` n'existe pas.
+  - svc-03 et svc-07 : CrashLoopBackOff.
+  - svc-05 : ImagePullBackOff, l'image `busybox:9.99` n'existe pas (`manifest unknown`).
+  - svc-09 : Pending, `Insufficient cpu` sur les 3 nœuds.
+  - svc-02 : Running, mais son nœud a signalé `NodeNotReady`.
+
+**Correction proposée**
+1. Vérifier si le manifeste de svc-04 a bien été appliqué : `kubectl apply -f svc-04.yaml -n aikube-agent2`. Une fois l'API stabilisée, vérifier avec `kubectl get deploy svc-04 -n aikube-agent2`.
+2. Si svc-04 existait avant, chercher une suppression dans les audit logs ou dans votre outil de déploiement (GitOps, CI).
+3. Traiter d'abord l'instabilité etcd/API, qui a probablement fait échouer la création. Il s'agit sans doute d'un manque de CPU sur la machine hôte (cluster local, svc-09 en `Insufficient cpu`). Je peux regarder `host_load_history` et les logs etcd si vous voulez.
+4. Pour les autres déploiements :
+   - svc-05 : corriger l'image avec `kubectl set image deploy/svc-05 app=busybox:1.36 -n aikube-agent2`.
+   - svc-01 : créer la StorageClass `fast-ssd`, ou changer le `storageClassName` du PVC.
+
+**Certitude** — Élevée sur le fait que svc-04 n'existe pas. Faible sur la raison, création échouée ou suppression, tant que l'API n'est pas stable. Vous pouvez aussi vérifier que vous visez le bon nom ou le bon namespace."
+v2,probe,chat-claude,3,readinessProbe sur le port 8081 au lieu de 80,0.0,0.0,,"Je n'ai pas accès au contenu du déploiement `svc-04` (ni son manifeste, ni ses événements, ni ses logs), donc je ne peux pas vous donner la cause exacte sans inventer. Voici ce que je peux dire à partir de ce que je vois.
+
+## Ce qui ressort du contexte
+- **Nœuds planifiables : 0**, avec une capacité allouable de 0m CPU / 0 Mio. Si c'est exact, aucun pod de `svc-04` ne peut être planifié et ils resteront en `Pending` (événement `FailedScheduling: 0/N nodes are available`).
+- La version du serveur est « inconnue », ce qui suggère que l'API server est injoignable ou que minikube est arrêté ou en mauvais état.
+- La machine hôte est surchargée (charge 19 sur 4 cœurs), ce qui peut ralentir ou rendre instable le cluster minikube (nœud `NotReady`, timeouts).
+
+Ce n'est qu'une hypothèse : le problème peut aussi venir du déploiement lui-même.
+
+## Pour identifier la cause exacte
+```bash
+kubectl get nodes -o wide
+kubectl -n aikube-agent2 get deploy svc-04 -o wide
+kubectl -n aikube-agent2 describe deploy svc-04
+kubectl -n aikube-agent2 get pods -l app=svc-04   # adapter le label
+kubectl -n aikube-agent2 describe pod <pod>       # section Events
+kubectl -n aikube-agent2 logs <pod> --previous
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp
+```
+
+## Causes fréquentes et corrections
+| Symptôme | Cause | Correction |
+|---|---|---|
+| `Pending` + `0 nodes available` | Aucun nœud prêt, ou requests trop élevées | Redémarrer minikube (`minikube start`), réduire les `requests` |
+| `Pending` + `Insufficient memory/cpu` | Requests supérieures à la capacité d'un nœud | Baisser les requests ou augmenter les ressources de minikube |
+| `Pending` + `unbound PersistentVolumeClaim` | Pas de StorageClass dans ce cluster | Créer un PV manuel ou retirer le PVC |
+| `ImagePullBackOff` | Image ou tag inexistant, registre inaccessible | Corriger l'image, ou `minikube image load` |
+| `CrashLoopBackOff` | Erreur applicative, config ou probe défaillante | Consulter `logs --previous`, corriger la commande, les variables d'env ou les probes |
+| `CreateContainerConfigError` | ConfigMap ou Secret manquant | Créer la ressource référencée |
+
+Si vous me transmettez la sortie de `kubectl describe pod` (section Events) et du manifeste de `svc-04`, je vous indiquerai la cause précise et le correctif YAML."
+v2,probe,chat-claude-obs,3,readinessProbe sur le port 8081 au lieu de 80,0.0,0.0,,"## svc-04 : introuvable dans le namespace
+
+Le déploiement `svc-04` **n'apparaît pas** dans le relevé de `aikube-agent2`. On y voit `svc-01`, `02`, `03`, `05`, `07` et `09`, mais ni `svc-04`, ni son ReplicaSet, ni ses pods. Aucun événement ne le mentionne non plus. Je ne peux donc pas identifier de cause exacte pour lui : il n'existe pas (ou plus) dans ce namespace.
+
+### Hypothèses plausibles
+- **Il n'a jamais été créé.** Les événements montrent des échecs d'API autour de la création des autres déploiements : `etcdserver: request timed out`, `connection refused` sur l'API server et `resource quota evaluation timed out`. Un `kubectl apply` a pu échouer pour `svc-04` sans laisser de trace.
+- **Il a été supprimé.** Les événements les plus anciens ont pu expirer (TTL d'environ 1 h).
+- **Il est dans un autre namespace**, ou son nom est différent.
+
+Le plan de contrôle est instable. La charge de l'hôte est de 18.76 sur 4 cœurs, ce qui explique très probablement les timeouts etcd et les `context deadline exceeded`.
+
+### Vérifications
+```bash
+# Existe-t-il ailleurs ?
+kubectl get deploy -A | grep svc-04
+
+# Trace dans les événements ou l'audit
+kubectl get events -n aikube-agent2 | grep svc-04
+
+# Le manifeste source existe-t-il ? Rejouer l'application
+kubectl apply -f svc-04.yaml -n aikube-agent2
+kubectl rollout status deploy/svc-04 -n aikube-agent2
+```
+
+Si le déploiement doit exister, réappliquez le manifeste une fois la charge de l'hôte redescendue. Fermer les applications gourmandes sur la machine ou réduire le nombre de pods aiderait.
+
+### Problèmes visibles sur les autres déploiements
+| Déploiement | Cause observée | Correction |
+|---|---|---|
+| svc-01 | PVC `agent-data` en Pending : la StorageClass `fast-ssd` n'existe pas | Utiliser `storageClassName: standard` (seule classe disponible) ou créer `fast-ssd` |
+| svc-05 | Image `busybox:9.99` inexistante (`manifest unknown`) | Utiliser `busybox:1.36` |
+| svc-09 | `Insufficient cpu` sur les 3 nœuds | Réduire `resources.requests.cpu` (max 3680m par pod, moins en pratique) |
+| svc-03 / svc-07 | CrashLoopBackOff avec `context deadline exceeded` ; cause non déterminable sans logs | `kubectl logs --previous` et `kubectl describe pod` |
+
+Si vous avez un `svc-04` attendu ailleurs, ou son manifeste, envoyez-moi le résultat des commandes ci-dessus et je regarderai."
+v2,service,agent,3,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",0.5,0.5,,"**Diagnostic** — Dans `aikube-agent2`, il n'y a pas de service `web-front`, ni de Deployment, de pod ou d'Ingress de ce nom. Il n'y a donc rien à corriger sur `web-front` lui-même. Par contre, le namespace contient d'autres workloads (`svc-01` à `svc-09`) dont 5 sur 6 sont en échec.
+
+**Preuves**
+- `kubectl get svc web-front -n aikube-agent2` renvoie `NotFound`. La liste des services du namespace est vide, tout comme celle des Ingress.
+- Le namespace ne contient que les Deployments `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`. Seul `svc-02` est Ready.
+- La requête `get endpoints web-front` a expiré (délai de 20 s). Le pod `kube-apiserver-minikube` est `ready=False` avec 68 redémarrages, ce qui peut expliquer ce timeout, mais pas l'absence du service.
+- Les pods en échec :
+  - `svc-01` : Pending, car le PVC n'est pas lié (`pod has unbound immediate PersistentVolumeClaims`). Le `storage-provisioner` de kube-system est lui-même en CrashLoopBackOff (200 redémarrages), ce qui est probablement la cause racine.
+  - `svc-03` : CrashLoopBackOff, code de sortie 1. Je n'ai pas consulté ses logs.
+  - `svc-05` : ImagePullBackOff, l'image `busybox:9.99` n'existe pas.
+  - `svc-07` : CrashLoopBackOff, `OOMKilled` (code 137).
+  - `svc-09` : Pending, `0/3 nodes are available: 3 Insufficient cpu`.
+
+**Correction proposée**
+- Si vous pensiez à un service existant, vérifiez le nom et le namespace :
+  `kubectl get svc -A | grep web-front`
+- Si `web-front` doit exister ici, il n'a jamais été déployé ou il a été supprimé. Il faut alors réappliquer son manifeste (Service et Deployment) dans `aikube-agent2`.
+- Pour les workloads en échec du namespace :
+  - `svc-05` : corriger l'image, par exemple `kubectl set image deploy/svc-05 app=busybox:1.36 -n aikube-agent2`.
+  - `svc-07` : augmenter `resources.limits.memory`. Les limites actuelles sont à vérifier avec `kubectl get deploy svc-07 -o yaml`.
+  - `svc-09` : réduire `requests.cpu` ou libérer du CPU sur les nœuds.
+  - `svc-01` : réparer d'abord le `storage-provisioner` (`kubectl logs -n kube-system storage-provisioner --previous`).
+  - `svc-03` : lire `kubectl logs -n aikube-agent2 svc-03-577cbf7ddc-k8tmx --previous`.
+
+**Certitude** — Élevée sur l'absence de `web-front` dans ce namespace, puisque trois requêtes (service, liste des services, Ingress) concordent. Moyenne sur les causes des pods `svc-*`. Je n'ai pas lu les logs de `svc-03` ni les limites mémoire de `svc-07`. Si vous me donnez le bon nom ou le bon namespace, je peux relancer l'analyse."
+v2,service,chat-claude,3,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.0,,"Je ne peux pas inspecter l'état réel du service `web-front` : je n'ai pas d'accès direct à l'API du cluster dans cette conversation. Je ne peux donc pas vous donner la cause exacte sans inventer. Voici comment la trouver rapidement.
+
+## 1. Diagnostic en 4 commandes
+
+```bash
+# Le service et ses endpoints (vide = problème de sélecteur ou de pods non Ready)
+kubectl -n aikube-agent2 get svc web-front -o wide
+kubectl -n aikube-agent2 get endpoints web-front
+
+# Les pods ciblés par le service
+kubectl -n aikube-agent2 get pods -o wide --show-labels
+kubectl -n aikube-agent2 describe svc web-front
+```
+
+## 2. Causes les plus fréquentes
+
+| Symptôme | Cause probable | Vérification |
+|---|---|---|
+| `Endpoints: <none>` | `spec.selector` du Service ne correspond pas aux labels des pods | comparer `describe svc` et `--show-labels` |
+| Endpoints présents dans `notReadyAddresses` | readinessProbe en échec | `kubectl describe pod` → Events |
+| Connexion refusée | `targetPort` différent du port d'écoute du conteneur | `kubectl get svc -o yaml` vs `containerPort` |
+| Pods `Pending` | requests CPU/RAM trop élevées ou PVC non lié | `describe pod` → `FailedScheduling` |
+| `CrashLoopBackOff` / `ImagePullBackOff` | erreur applicative ou image introuvable | `kubectl logs --previous` |
+| Service `LoadBalancer` en `<pending>` | normal sur minikube sans tunnel | `minikube tunnel` ou utiliser `NodePort` |
+| Aucun Ingress | aucune IngressClass n'existe sur ce cluster | installer un contrôleur (`minikube addons enable ingress`) |
+
+## 3. Point d'attention sur la machine hôte
+
+La charge de l'hôte est de **17.19 pour 4 cœurs** (pic à 22.17). Les nœuds minikube partagent ces ressources, donc des timeouts de probes (liveness/readiness) peuvent faire passer les pods en `NotReady` et vider les endpoints, même si la configuration est correcte. Dans ce cas, vérifiez dans les Events la mention `Readiness probe failed: context deadline exceeded`. Vous pouvez alors augmenter `timeoutSeconds` et `failureThreshold`, ou réduire la charge de l'hôte.
+
+## 4. Exemple de correction d'un sélecteur incorrect
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-front
+  namespace: aikube-agent2
+spec:
+  selector:
+    app: web-front        # doit correspondre exactement aux labels du pod template
+  ports:
+    - port: 80
+      targetPort: 8080    # doit correspondre au port d'écoute du conteneur
+```
+
+Si vous me collez la sortie de `kubectl -n aikube-agent2 describe svc web-front`, de `get endpoints web-front` et de `describe pod` sur un pod concerné, je pourrai identifier la cause exacte et vous donner le correctif précis."
+v2,service,chat-claude-obs,3,"sélecteur app=agent-backnd (faute de frappe), aucun endpoint",1.0,0.5,,"## Verdict : `web-front` n'apparaît pas dans ce namespace
+
+Dans le relevé, il n'existe **aucun** Deployment, ReplicaSet, Pod ou Service nommé `web-front`. Les seules charges présentes sont `svc-01`, `svc-02`, `svc-03`, `svc-05`, `svc-07` et `svc-09`.
+
+La sortie ne contient aucune section Services, Endpoints ou PVC. `kubectl` omet les types sans ressource, donc il n'y a vraisemblablement **aucun Service** dans `aikube-agent2`, y compris `web-front`.
+
+Je ne peux donc pas désigner une cause exacte pour `web-front`. Les hypothèses les plus probables :
+- le Service n'a jamais été créé (ou a été supprimé) ;
+- il est dans un autre namespace ou porte un autre nom ;
+- le relevé est incomplet. Les événements ont échoué avec `connection reset by peer`, ce qui suggère un API server instable. La machine hôte est très surchargée (charge 18 sur 4 cœurs), ce qui peut l'expliquer, mais c'est une hypothèse.
+
+### Vérifications à faire
+```bash
+kubectl get svc,endpoints -n aikube-agent2
+kubectl get svc -A | grep web-front
+kubectl get deploy,pods -A | grep web-front
+```
+
+Si le Service existe mais n'a pas d'endpoints, comparez son `selector` aux labels des pods :
+```bash
+kubectl get svc web-front -n aikube-agent2 -o yaml | grep -A3 selector
+kubectl get pods -n aikube-agent2 --show-labels
+```
+
+Pour le recréer, voici un exemple à adapter (le label `app: web-front` doit correspondre aux pods d'un Deployment existant) :
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-front
+  namespace: aikube-agent2
+spec:
+  selector:
+    app: web-front
+  ports:
+    - port: 80
+      targetPort: 80
+```
+
+## Problèmes réels observés sur les autres workloads
+| Workload | État | Cause probable / action |
+|---|---|---|
+| `svc-05` | ImagePullBackOff | Le tag `busybox:9.99` n'existe pas. Utiliser un tag valide, par ex. `busybox:1.36`. |
+| `svc-03`, `svc-07` | CrashLoopBackOff | Cause inconnue sans les logs : `kubectl logs <pod> -n aikube-agent2 --previous`. |
+| `svc-01`, `svc-09` | Pending, sans nœud | Probablement un souci de planification (ressources, taints, nodeSelector). À confirmer avec `kubectl describe pod`. |
+| `svc-02` | Running | OK. |
+
+Le contexte indique aussi 0 nœud planifiable et aucune capacité libre. Cela pourrait expliquer les pods Pending, mais cela contredit les pods qui tournent sur `minikube-m02`. Vérifiez avec `kubectl get nodes` et `kubectl describe node`.
+
+Si vous me donnez la sortie de `kubectl get svc -n aikube-agent2` et le manifeste attendu de `web-front`, je pourrai être plus précis."
+v2,storage,agent,3,PVC sur une StorageClass inexistante,1.0,1.0,,"**Diagnostic** — Oui, `svc-01` est en panne. Son pod reste en `Pending` parce que le PVC `agent-data` qu'il monte ne peut pas être créé. Ce PVC demande une StorageClass `fast-ssd` qui n'existe pas dans le cluster.
+
+**Preuves**
+- Le déploiement indique `Available=False (MinimumReplicasUnavailable)` et `Progressing=False (ProgressDeadlineExceeded)`.
+- Le pod `svc-01-68f46ff877-xcscp` est `Pending` depuis 56 min, sans nœud assigné.
+- Événement `FailedScheduling` : `0/3 nodes are available: pod has unbound immediate PersistentVolumeClaims`.
+- Événement sur le PVC : `ProvisioningFailed … storageclass.storage.k8s.io ""fast-ssd"" not found`.
+- Le PVC `agent-data` est en `phase: Pending` avec `storageClassName: fast-ssd`.
+- Le cluster n'a qu'une StorageClass, `standard` (par défaut, provisioner `k8s.io/minikube-hostpath`, mode `Immediate`).
+- Ce n'est pas un problème de ressources. Les nœuds ont 3,1 à 3,7 CPU libres, et le pod ne demande que 10m de CPU et 16Mi de RAM.
+- Les erreurs `etcdserver: request timed out` vues au démarrage sont sans rapport avec la panne actuelle. Elles correspondent à une surcharge passagère de la machine hôte. Elle a une charge de 17 sur 4 cœurs, avec un pic à 22.
+
+**Correction proposée**
+
+Un champ `storageClassName` ne peut pas être modifié sur un PVC existant. Il faut donc recréer le PVC. Le PVC est `Pending`, donc il ne contient aucune donnée. La suppression reste malgré tout à confirmer de votre côté, et il faut vérifier qu'aucun autre pod du namespace ne l'utilise.
+
+Option A : utiliser la StorageClass existante (la plus simple).
+```bash
+kubectl -n aikube-agent2 delete deployment svc-01
+kubectl -n aikube-agent2 delete pvc agent-data
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data
+  namespace: aikube-agent2
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+EOF
+# puis réappliquer le manifeste du Deployment svc-01
+```
+Le pod en `Pending` garde le PVC protégé par `pvc-protection`. Supprimer le Deployment d'abord permet donc au PVC de se supprimer.
+
+Option B : si vous voulez vraiment une classe `fast-ssd`, créez une StorageClass de ce nom. Elle peut pointer vers le même provisioner.
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: k8s.io/minikube-hostpath
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+```
+Le PVC se liera alors tout seul, sans qu'il soit nécessaire de le recréer. Le pod sera ensuite planifié au prochain cycle de l'ordonnanceur. Il peut être utile de faire `kubectl -n aikube-agent2 rollout restart deployment svc-01` pour accélérer.
+
+**Certitude** — Élevée. L'événement du PVC, l'état `Pending` du PVC et la liste des StorageClasses concordent. Pour confirmer, vérifiez après correction que `kubectl -n aikube-agent2 get pvc agent-data` affiche `Bound` et que le pod passe en `Running`.
+
+Les autres pods du namespace ont des causes différentes, indépendante"
+v2,storage,chat-claude,3,PVC sur une StorageClass inexistante,0.5,0.0,,"Je n'ai pas accès à l'état du déploiement `svc-01` dans `aikube-agent2` (statut, événements, logs, spec). Je ne peux donc pas confirmer s'il pose un problème, ni en donner la cause exacte sans inventer. Voici comment l'établir rapidement.
+
+## Diagnostic
+
+```bash
+# 1. État global
+kubectl -n aikube-agent2 get deploy svc-01 -o wide
+kubectl -n aikube-agent2 rollout status deploy/svc-01 --timeout=10s
+
+# 2. Pods et raison de leur état
+kubectl -n aikube-agent2 get pods -l app=svc-01 -o wide   # adapter le label
+kubectl -n aikube-agent2 describe deploy svc-01
+kubectl -n aikube-agent2 describe pod <pod>
+
+# 3. Événements récents
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -30
+
+# 4. Logs (y compris du conteneur précédent en cas de crash)
+kubectl -n aikube-agent2 logs deploy/svc-01 --tail=100
+kubectl -n aikube-agent2 logs <pod> --previous
+```
+
+## Correspondance symptôme → cause → correction
+
+| Symptôme | Cause probable | Correction |
+|---|---|---|
+| `Pending` + `FailedScheduling` | requests CPU/RAM trop élevées (max plaçable : 3680m CPU / 9445Mi RAM) ou quota du namespace | réduire les `requests`, ou ajuster le `ResourceQuota` |
+| `ImagePullBackOff` / `ErrImagePull` | image ou tag inexistant, registre inaccessible, secret manquant | corriger `image:`, ajouter `imagePullSecrets` |
+| `CrashLoopBackOff` | erreur applicative, variable d'environnement, ConfigMap ou Secret manquant | lire `logs --previous`, corriger la config |
+| `OOMKilled` (exit code 137) | `limits.memory` trop basse | augmenter la limite mémoire |
+| `Running` mais `0/1 Ready` | readiness probe en échec (mauvais port ou chemin, `initialDelaySeconds` trop court) | corriger la probe |
+| `CreateContainerConfigError` | ConfigMap ou Secret référencé absent | le créer dans `aikube-agent2` |
+| Pods redémarrés par la liveness probe | timeout trop court | augmenter `timeoutSeconds`, `failureThreshold` |
+
+## Point d'attention sur l'hôte
+
+La machine hôte est actuellement surchargée (charge 17.3 sur 4 cœurs, pic à 22.17). Sur un cluster minikube, cela peut provoquer des timeouts de probes, des redémarrages intempestifs et des démarrages lents. Si les logs de `svc-01` sont sains mais que les probes échouent par intermittence, c'est une piste sérieuse. Dans ce cas, augmentez `timeoutSeconds` et `failureThreshold`, ou réduisez la charge de l'hôte.
+
+Si vous me collez la sortie de `kubectl describe deploy svc-01`, de `kubectl describe pod` et des événements, je vous donnerai la cause exacte et le YAML corrigé."
+v2,storage,chat-claude-obs,3,PVC sur une StorageClass inexistante,1.0,1.0,,"## Diagnostic
+
+Oui, `svc-01` a un problème : son pod `svc-01-68f46ff877-xcscp` reste **Pending** et n'est jamais planifié sur un nœud.
+
+## Cause exacte
+
+Le scheduler refuse de placer le pod parce qu'il référence un PVC jamais lié :
+
+```
+0/3 nodes are available: pod has unbound immediate PersistentVolumeClaims
+```
+
+Le PVC `agent-data` est en `Pending` depuis 61 min, car il demande la StorageClass **`fast-ssd`**, qui n'existe pas :
+
+```
+ProvisioningFailed  persistentvolumeclaim/agent-data  storageclass.storage.k8s.io ""fast-ssd"" not found
+```
+
+Le cluster ne propose que la StorageClass `standard` (par défaut). Sans provisionneur pour `fast-ssd`, aucun PV n'est créé, le PVC reste non lié et le pod reste bloqué.
+
+Je déduis que `svc-01` monte `agent-data` d'après l'événement de scheduling. Vous pouvez le vérifier ainsi :
+
+```bash
+kubectl get deploy svc-01 -n aikube-agent2 -o yaml | grep -B2 -A2 claimName
+```
+
+## Correction
+
+### Option A (la plus simple) : créer la StorageClass manquante
+
+Elle réutilise le provisionneur hostpath de minikube. Le PVC existant n'est pas touché et se lie tout seul au prochain retry.
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+provisioner: k8s.io/minikube-hostpath
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+```
+
+```bash
+kubectl apply -f fast-ssd.yaml
+kubectl get pvc agent-data -n aikube-agent2 -w
+```
+
+### Option B : utiliser la classe `standard`
+
+Le champ `storageClassName` d'un PVC est **immuable**, il faut donc recréer le PVC. Le finalizer `pvc-protection` bloque sa suppression tant qu'un pod le référence, donc on met d'abord le déploiement à 0.
+
+```bash
+kubectl scale deploy svc-01 -n aikube-agent2 --replicas=0
+kubectl delete pvc agent-data -n aikube-agent2
+```
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: agent-data
+  namespace: aikube-agent2
+spec:
+  accessModes: [""ReadWriteOnce""]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi   # reprendre la taille d'origine
+```
+
+```bash
+kubectl apply -f pvc.yaml
+kubectl scale deploy svc-01 -n aikube-agent2 --replicas=1
+```
+
+Le PVC étant resté `Pending`, aucune donnée n'est perdue dans les deux cas.
+
+## À noter
+
+- `svc-09` est aussi `Pending`, mais pour une autre raison : `Insufficient cpu`. Cela ressemble à un problème de requests CPU trop élevées, à examiner séparément.
+- Les autres déploiements (`svc-03`, `svc-05`, `svc-07`) ont leurs propres pannes (CrashLoopBackOff, image `busybox:9.99` inexistante). Elles sont sans lien avec `svc-01`."
+v2,healthy,agent,3,aucune panne (témoin),1.0,1.0,,"**Diagnostic** — Non, svc-02 ne pose pas de problème actuel. Le déploiement est sain (1/1 prêt, 0 redémarrage). Il a rencontré des erreurs transitoires à la création, causées par la surcharge CPU de la machine hôte. Cette surcharge dure toujours.
+
+**Preuves**
+- Déploiement : `availableReplicas: 1`, `readyReplicas: 1`, condition `NewReplicaSetAvailable` et `MinimumReplicasAvailable` à True.
+- Pod `svc-02-57b8b798fd-sph5v` : `Running`, `Ready True`, `Restart Count: 0`. Il tourne sur minikube-m02 avec `sleep 100000` et l'image `busybox:1.36`, déjà présente sur le nœud. Les limites sont de 32Mi de mémoire, ce qui suffit pour `sleep`.
+- Événements anciens, d'il y a environ 60 minutes, au démarrage :
+  - `ReplicaSetCreateError … etcdserver: request timed out`
+  - `resource quota evaluation timed out`
+  - `FailedScheduling … Bind plugin … etcdserver: request timed out`
+  - `FailedMount … kube-root-ca.crt not registered`
+  
+  Ces erreurs viennent de l'API server et d'etcd, pas de la configuration de svc-02. Elles ont disparu ensuite et le pod a démarré.
+- Charge de l'hôte (4 cœurs) : load average de 17 à 20 sur toute la période, soit environ 4,5 à 5 par cœur, alors que le seuil de surcharge est 1,5. Cela explique les timeouts etcd.
+- `NodeNotReady` (x6 sur 51 min) sur le pod : le node-controller a signalé le nœud comme non prêt à plusieurs reprises. Les 3 nœuds sont `Ready` à l'instant T, donc ces épisodes sont intermittents. Ils sont probablement dus à la même surcharge, qui retarde les heartbeats du kubelet. Le pod n'a pas été évincé, car la tolérance de 300 s n'a jamais été dépassée.
+
+**Correction proposée**
+Rien à corriger dans le manifeste de svc-02. Le vrai problème est la charge de la machine hôte, qui peut aussi faire échouer les autres déploiements du namespace :
+- Réduire la charge : arrêter les workloads inutiles, ou allouer plus de CPU à Docker/WSL2 (`.wslconfig`, `processors=`) et à minikube (`minikube start --cpus=…`).
+- Surveiller la stabilité des nœuds : `kubectl get nodes -w`.
+
+Les autres pods du namespace ont des causes propres, sans rapport avec svc-02. Ce sont svc-05 (image `busybox:9.99` inexistante), svc-01 (PVC `agent-data` avec la StorageClass `fast-ssd` introuvable), svc-09 (CPU insuffisant) et svc-03/svc-07 (CrashLoopBackOff). Je peux les analyser si vous le souhaitez.
+
+**Certitude** — Élevée pour l'état sain de svc-02. Moyenne pour le lien entre les `NodeNotReady` et la surcharge de l'hôte. Pour le confirmer, il faudrait les logs du kubelet de minikube-m02 et `kubectl describe node minikube-m02` aux heures des épisodes."
+v2,healthy,chat-claude,3,aucune panne (témoin),1.0,0.0,,"Je ne peux pas inspecter directement l'état de `svc-02` : je n'ai pas accès à son manifeste, à ses événements ni à ses logs. Je ne veux pas inventer une cause. Voici comment l'identifier rapidement.
+
+## 1. Diagnostic
+
+```bash
+# État général
+kubectl -n aikube-agent2 get deploy svc-02 -o wide
+kubectl -n aikube-agent2 get pods -l app=svc-02   # adapter le label si besoin
+
+# Cause exacte : conditions + événements
+kubectl -n aikube-agent2 describe deploy svc-02
+kubectl -n aikube-agent2 describe pod <pod>
+
+# Logs (y compris du conteneur précédent en cas de crash)
+kubectl -n aikube-agent2 logs <pod> --previous
+kubectl -n aikube-agent2 get events --sort-by=.lastTimestamp | tail -30
+
+# Rollout
+kubectl -n aikube-agent2 rollout status deploy/svc-02
+```
+
+## 2. Symptôme → cause probable
+
+| Symptôme | Cause fréquente | Correction |
+|---|---|---|
+| `Pending` + `FailedScheduling` | requests CPU/RAM trop élevées (max par pod ici : 3680m CPU / 9545Mi RAM), nodeSelector/taint, PVC non lié | Réduire les requests ou corriger le scheduling/PVC |
+| `ImagePullBackOff` / `ErrImagePull` | Mauvais nom ou tag d'image, registre privé sans `imagePullSecrets` | Corriger l'image, ou créer et référencer le secret |
+| `CrashLoopBackOff` | Erreur applicative, variable d'environnement, ConfigMap ou Secret manquant | Lire `logs --previous`, corriger la config |
+| `OOMKilled` (exit 137) | `limits.memory` trop basse | Augmenter la limite mémoire |
+| `Running` mais `0/1 Ready` | Readiness probe en échec (mauvais port ou chemin, délai trop court) | Corriger la probe ou augmenter `initialDelaySeconds` / `timeoutSeconds` |
+| `CreateContainerConfigError` | ConfigMap ou Secret référencé inexistant | Créer la ressource manquante |
+| Rollout bloqué | Nouvelle révision défaillante | `kubectl rollout undo deploy/svc-02 -n aikube-agent2` |
+
+## 3. Point d'attention sur l'hôte
+
+La machine hôte est actuellement **surchargée** (charge 17,16 sur 4 cœurs, pic à 22,17). Sur ce cluster minikube, cela peut provoquer des **timeouts de probes liveness/readiness** et des redémarrages, même si l'application est saine. Si c'est ce que vous observez, assouplissez les probes :
+
+```yaml
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 15
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+```
+
+Si vous me collez la sortie de `kubectl describe deploy svc-02` et `kubectl describe pod`, ainsi que les logs, je vous donnerai la cause exacte et le correctif YAML précis."
+v2,healthy,chat-claude-obs,3,aucune panne (témoin),1.0,1.0,,"## Verdict : svc-02 ne pose pas de problème
+
+D'après l'état relevé, le déploiement est sain :
+
+- `deployment.apps/svc-02` : **1/1** READY, UP-TO-DATE 1, AVAILABLE 1
+- ReplicaSet `svc-02-57b8b798fd` : desired 1, current 1, ready 1
+- Pod `svc-02-57b8b798fd-sph5v` : **Running**, 1/1, **0 redémarrage**, placé sur `minikube-m02`
+
+Il n'y a donc pas de cause à corriger.
+
+## Points à noter
+
+- **Aucun Service ni Endpoints** n'apparaît dans le namespace. Si svc-02 doit être joignable, il manque un Service avec `selector: app=svc-02`. Sinon, ce n'est pas un défaut.
+- **`kubectl get events` a échoué** (`connection reset by peer`). L'API server est probablement ralenti par la forte charge de la machine hôte (18 sur 4 cœurs). Les événements n'ont donc pas pu confirmer l'absence d'avertissements. Pour vérifier :
+  ```bash
+  kubectl describe deploy svc-02 -n aikube-agent2
+  kubectl logs deploy/svc-02 -n aikube-agent2 --tail=50
+  ```
+
+## Les autres déploiements, eux, sont en erreur
+
+| Déploiement | Symptôme | Piste |
+|---|---|---|
+| svc-05 | ImagePullBackOff | Le tag `busybox:9.99` n'existe pas : utiliser par exemple `busybox:1.36`. |
+| svc-03, svc-07 | CrashLoopBackOff | Le conteneur quitte ou plante : voir `kubectl logs --previous` et la `command` ou `args`. |
+| svc-01, svc-09 | Pending | Aucun nœud ne peut les planifier : `kubectl describe pod` pour voir le motif du `FailedScheduling` (requests trop élevées, taints, etc.). |
+
+Je peux détailler l'un de ces cas si tu me donnes la sortie de `describe` ou des logs."

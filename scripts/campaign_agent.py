@@ -252,6 +252,25 @@ def bench_state():
     return r.stdout.strip(), None
 
 
+KIND = {"déploiement": "deployment", "service": "service"}
+
+
+def missing_targets(bench):
+    """Objets du banc absents du cluster (banc mal créé, serveur surchargé…)."""
+    ns = BENCHES[bench]["ns"]
+    manque = []
+    for cible in BENCHES[bench]["targets"].values():
+        mots = cible.split()
+        kind = next((KIND[m] for m in mots if m in KIND), None)
+        if not kind:
+            continue
+        r = subprocess.run(["kubectl", "get", f"{kind}/{mots[-1]}", "-n", ns],
+                           capture_output=True, text=True, timeout=40)
+        if r.returncode != 0:
+            manque.append(cible)
+    return manque
+
+
 def done_keys():
     keys = set()
     if os.path.exists(OUT):
@@ -322,6 +341,10 @@ def main():
                f"k8s/benchmark/agent-benchmark{'' if a.bench == 'v1' else '-' + a.bench}.yaml")
         sys.exit(f"Banc introuvable ({err}).\n→ kubectl apply -f {man}, attendre 3 min, relancer.")
     print("État du banc :\n" + state + "\n")
+    manque = missing_targets(a.bench)
+    if manque:
+        sys.exit("Banc incomplet, mesure annulée. Objets absents : " + ", ".join(manque) +
+                 "\n→ vérifier le cluster (kubectl get nodes), réappliquer le banc, attendre 3 min, relancer.")
 
     conds = [c.strip() for c in a.conditions.split(",") if c.strip()]
     for c in list(conds):
